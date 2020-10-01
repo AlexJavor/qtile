@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# By Alexandre Javornik
+
+# Modify brigthness: 
+# $1 : Output selection screen (eDP-1-1, HDMI-1-1, DP-1-1)
+# $2 : increase (+), decrease (-)
+# $3 : Percentage change (number between 0 and 100)
+# if the brightness is less than 0 close the sceen; if it is superior to 0 or more, open it.
+
+
+if [ $1 = "eDP-1-1" ] || [ $1 = "HDMI-1-1" ] || [ $1 = "DP-1-1" ]
+then
+    if [ $2 = "+" ] || [ $2 = "-" ]
+    then
+        if [ $(xrandr --prop --verbose | grep -A10 "$1 connected" | grep "Brightness" | cut -d " " -f 2) ]
+        then
+            
+            initial_integer=$(xrandr --prop --verbose | grep -A10 "$1 connected" | grep "Brightness" | cut -d " " -f 2 | cut -d "." -f 1)
+            initial_decimal=$(xrandr --prop --verbose | grep -A10 "$1 connected" | grep "Brightness" | cut -d " " -f 2 | cut -d "." -f 2)
+            
+            # Calculate initial percentage
+            if [ $initial_integer -eq 1 ]
+            then
+                initial_percentage=100
+            elif [ $initial_integer -eq 0 ]
+            then
+                initial_percentage=$(xrandr --prop --verbose | grep -A10 "$1 connected" | grep "Brightness" | cut -d " " -f 2 | cut -d "." -f 2)
+            else
+                echo "ERROR: brigthness value must be between 0 and 1"
+            fi
+
+            # Calculate new percentage
+            let new_percentage="$initial_percentage $2 $3"
+            new_number="0.$new_percentage"
+
+            echo "Initial percentage: $initial_percentage"
+            echo "New percentage: $new_percentage"
+
+            # Select output function
+            if [ $new_percentage -lt 0 ] && [ $initial_percentage -gt 0 ]
+            then
+                xrandr --output $1 --brightness 0
+            elif [ $new_percentage -lt 0 ] && [ $initial_percentage -eq 0 ]
+            then
+                xrandr --output $1 --off
+            elif [ $new_percentage -eq 100 ] || [ $new_percentage -gt 100 ]
+            then
+                xrandr --output $1 --brightness 1
+            else
+                xrandr --output $1 --auto
+                xrandr --output $1 --brightness $new_number
+            fi
+        else
+            if [ $2 = "+" ]
+            then
+                xrandr --output $1 --auto
+            fi
+        fi
+    else
+        echo "ERROR: The second parameter must be +(increase) or -(decrease)"
+    fi        
+else
+    echo "ERROR: The first parameter must be 'eDP-1-1', 'HDMI-1-1' or 'DP-1-1'"
+fi
+#xrandr --output HDMI-1-1 --auto
+#xrandr --output HDMI-1-1 --off
+#xrandr --output eDP-1-1 --brightness 0.5

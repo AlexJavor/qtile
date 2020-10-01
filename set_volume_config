@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# By Alexandre Javornik
+
+# TODO - Possibility to go over 100%!!!!!!!
+# $1 => Output selection (HDMI=1, PC=2)
+# $2 => increase (+), decrease (-), toggle mute (m)
+# $3 => Percentage change (number between 0 and 100)
+# $4 => Maximum percentage volume
+
+
+#getsink() {
+#    pacmd list-sinks | awk '/index:/{i++} /* index:/{print i; exit}'
+#}
+
+sink=$1
+
+if [ $4 -eq 150 ] || [ $4 -lt 150 ]
+then
+    max_percentage_volume=$4
+else
+    max_percentage_volume=150
+fi
+
+getvolume() {
+    pacmd list-sinks | awk '/^\svolume:/{i++} i=='$sink'{print $5+0; exit}'
+}
+getmuted() {
+    pacmd list-sinks | awk '/^\smuted:/{i++} i=='$sink'{print $2; exit}'
+}
+
+if [ $1 -eq 1 ] || [ $1 -eq 2 ]
+then
+    #index=$(($1 - 1))
+    let index="$1 - 1"
+    if [ $2 = "+" ] || [ $2 = "-" ]
+    then
+        #echo $(getvolume)
+        let new_percentage="$(getvolume) $2 $3"
+        #echo $new_percentage
+        let new_volume="($new_percentage*65536)/100"
+        #echo $new_volume
+        if [ $new_percentage -lt 0 ]
+        then
+            pacmd set-sink-volume $index 0
+        elif [ $new_percentage -gt $max_percentage_volume ]
+        then
+            let max_volume="($max_percentage_volume*65536)/100"
+            pacmd set-sink-volume $index $max_volume
+        else
+            pacmd set-sink-volume $index $new_volume
+        fi
+        #echo $(getvolume)
+        
+    elif [ $2 = "m" ]
+    then
+        echo $(getmuted)
+        if [ $(getmuted) = "no" ]
+        then 
+            pacmd set-sink-mute $index true
+        else
+            pacmd set-sink-mute $index false
+        fi
+        echo $(getmuted)
+    else
+        echo "ERROR: The second parameter must be +(increase), -(decrease), m(toggle muted)"
+    fi  
+else
+    echo "ERROR: The first parameter must be 1(HDMI) or 2(PC)"
+fi
+
+

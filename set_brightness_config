@@ -9,7 +9,7 @@
 # if the brightness is less than 0 close the sceen; if it is superior to 0 or more, open it.
 
 
-if [ $1 = "eDP-1-1" ] || [ $1 = "HDMI-1-1" ] || [ $1 = "DP-1-1" ]
+if [ $1 = "eDP-1" ] || [ $1 = "HDMI-1" ] || [ $1 = "DP-1" ]
 then
     if [ $2 = "+" ] || [ $2 = "-" ]
     then
@@ -61,8 +61,8 @@ then
         echo "ERROR: The second parameter must be +(increase) or -(decrease)"
     fi        
 else
-    echo "ERROR: The first parameter must be 'eDP-1-1', 'HDMI-1-1' or 'DP-1-1'"
+    echo "ERROR: The first parameter must be 'eDP-1', 'HDMI-1' or 'DP-1'"
 fi
-#xrandr --output HDMI-1-1 --auto
-#xrandr --output HDMI-1-1 --off
-#xrandr --output eDP-1-1 --brightness 0.5
+#xrandr --output HDMI-1 --auto
+#xrandr --output HDMI-1 --off
+#xrandr --output eDP-1 --brightness 0.5

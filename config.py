@@ -24,6 +24,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# IMPORTANT: Create simbolic links for the "set_brightness_config" and "set_volume_config":
+# ln -s ~/.config/qtile/set_volume_config volume
+# ln -s ~/.config/qtile/set_brightness_config brightness
+
 # ************** Log path *************** #
 # /home/$USER/.local/share/qtile/qtile.log
 
@@ -45,29 +49,51 @@ def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call([home])
 
+alt = "mod1"
 mod = "mod4"
+
 colors = {
-    "panel_bg" : "#282A36",
-    "current_screen_tab_bg" : "#434758",
-    "group_names" : "#ffffff",
-    "layout_widget_bg" : "#ff5555",
-    "other_screen_tabs_bg" : "#000000",
-    "other_screen_tabs" : "#A77AC4"
+    "black_grey" : "#282A36",   # panel_bg
+    "dark_grey"  : "#434758",   # current_screen_tab_bg
+    "white"      : "#ffffff",   # group_names
+    "light_red"  : "#ff5555",   # layout_widget_bg
+    "black"      : "#000000",   # other_screen_tabs_bg
+    "purple"     : "#A77AC4",    # other_screen_tabs
+    "french_blue": "#0055a4",
+    "french_red" : "#ef4135"
 }
 
 sound_card_output_HDMI = '1'
 sound_card_output_PC = '2'
-main_screen = 'eDP-1-1'
-hdmi_screen = 'HDMI-1-1'
-displayport_screen = 'DP-1-1'
+main_screen = 'eDP-1'
+hdmi_screen = 'HDMI-1'
+displayport_screen = 'DP-1'
 
 max_percentage_volume = '100' # Maximum Percentage: 150%
 
 selected_screen = {
-    "MainPC": "eDP-1-1",
-    "TV": "HDMI-1-1",
-    "DisplayPortScreen": "DP-1-1"
+    "MainPC": "eDP-1",
+    "TV": "HDMI-1",
+    "DisplayPortScreen": "DP-1"
 }
+
+group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
+group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
+group_numbers_current = group_numbers_kp
+
+def get_kb_layout():
+    kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
+    return kb_layout
+
+def get_current_volume():
+    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==1{print $5+0}'")
+    return volume + "%"
+    
+# Not used
+#def get_keycode():
+#    keycode = subprocess.getoutput("xmodmap -pke | grep KP_1 | awk '{print $2}'")
+#    return keycode
 
 keys = [
     # Switch between windows in current stack pane
@@ -100,12 +126,14 @@ keys = [
     Key([mod], "r", lazy.spawncmd()),
 
     # ************************ AlexJavor custom *************************** #
-    #Key([], 'XF86AudioLowerVolume', lazy.spawn('amixer -c 1 sset Master,0 5%-')),
-    #Key([], 'XF86AudioRaiseVolume', lazy.spawn('amixer -c 1 sset Master,0 5%+')),
-    #Key([], 'XF86AudioMute', lazy.spawn('amixer sset Master,0 toggle')),
-    Key([mod, "mod1"], "1",      lazy.to_screen(0)),
-    Key([mod, "mod1"], "2",      lazy.to_screen(1)),
-    Key([mod, "mod1"], "3",      lazy.to_screen(2)),
+    # Select screen focus
+    Key([mod, alt], group_numbers_current[0], lazy.to_screen(0)),
+    Key([mod, alt], group_numbers_current[1], lazy.to_screen(1)),
+    Key([mod, alt], group_numbers_current[2], lazy.to_screen(2)),
+
+    # Shift keyboard layout
+    Key(["shift", alt], "e", lazy.spawn("setxkbmap es")),
+    Key(["shift", alt], "f", lazy.spawn("setxkbmap fr")),
 
     # Open Firefox
     Key([mod], "f", lazy.spawn("firefox")),
@@ -116,14 +144,13 @@ keys = [
     Key([mod, "control"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen + " --output " + displayport_screen + " --mode 1600x900 --right-of " + main_screen)),
 
     # Output volume control HDMI
-    Key([], 'XF86AudioLowerVolume', lazy.spawn("volume " + sound_card_output_PC + " - 5 " + max_percentage_volume)),
-    Key([], 'XF86AudioRaiseVolume', lazy.spawn("volume " + sound_card_output_PC + " + 5 " + max_percentage_volume)),
-    Key([], 'XF86AudioMute', lazy.spawn("volume " + sound_card_output_PC + " m 0 " + max_percentage_volume)),
+    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI + " -5%")),
+    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI+ " +5%")),
+    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_HDMI + " toggle")), 
     # Output volume control PC
-    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("volume " + sound_card_output_HDMI + " - 5 " + max_percentage_volume)),
-    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("volume " + sound_card_output_HDMI + " + 5 " + max_percentage_volume)),
-    Key(["control"], 'XF86AudioMute', lazy.spawn("volume " + sound_card_output_HDMI + " m 0 " + max_percentage_volume)),
-
+    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " -5%")),
+    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " +5%")),
+    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_PC + " toggle")), 
     # Brightness and state control Main Screen (PC)
     Key([], 'XF86MonBrightnessUp', lazy.spawn("brightness " + main_screen + " + 50 ")),
     Key([], 'XF86MonBrightnessDown', lazy.spawn("brightness " + main_screen + " - 50 ")),
@@ -133,16 +160,21 @@ keys = [
     # Brightness and state control Mini Display Port Screen (Screen2)
     Key(["shift"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + displayport_screen + " + 50 ")),
     Key(["shift"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + displayport_screen + " - 50 ")),
-]
 
+    # Move to previous group
+    Key(["control", alt], "Left", lazy.screen.prev_group()),
+    Key(["control", alt], "Right", lazy.screen.next_group()),
+]
 
 group_names = 'DEV WWW SYS DOC VBOX CHAT MUS VID GFX'.split()
 groups = [Group(name, layout='max') for name in group_names]
+
 for i, name in enumerate(group_names):
-    indx = str(i + 1)
+    # indx = str(i + 1)
+    keypad_indx = group_numbers_current[i]
     keys += [
-        Key([mod], indx, lazy.group[name].toscreen()),
-        Key([mod, 'shift'], indx, lazy.window.togroup(name))]
+        Key([mod], keypad_indx, lazy.group[name].toscreen()),
+        Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name))]
 
 layouts = [
     layout.Max(),
@@ -154,18 +186,19 @@ widget_defaults = dict(
     font='Ubuntu Bold',
     fontsize=12,
     padding=3,
-    background = colors["panel_bg"] 
+    background = colors["black_grey"] 
 )
 
 screens = [
+    ########################### "AlexJavor-MAIN" #############################
     Screen(
         top=bar.Bar(
             [
                 widget.Sep(
                     linewidth = 0,
                     padding = 10,
-                    foreground = colors["group_names"],
-                    background = colors["panel_bg"]
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
                 ),
                 widget.GroupBox(font="Ubuntu Bold",
                     fontsize = 12,
@@ -174,87 +207,240 @@ screens = [
                     padding_x = 8,
                     padding_y = 8,
                     borderwidth = 1,
-                    active = colors["group_names"],
-                    inactive = colors["group_names"],
+                    active = colors["white"],
+                    inactive = colors["white"],
                     highlight_method = "block",
                     rounded = False,
-                    this_current_screen_border = colors["other_screen_tabs"],
-                    this_screen_border = colors["current_screen_tab_bg"],
-                    other_current_screen_border = colors["panel_bg"],
-                    other_screen_border = colors["panel_bg"],
-                    foreground = colors["group_names"],
-                    background = colors["panel_bg"]
+                    this_current_screen_border = colors["purple"],
+                    this_screen_border = colors["dark_grey"],
+                    other_current_screen_border = colors["black_grey"],
+                    other_screen_border = colors["black_grey"],
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
                 ),
                 widget.Prompt(
                     prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
                     font = "Ubuntu Mono",
                     padding = 10,
-                    foreground = colors["layout_widget_bg"],
-                    background = colors["current_screen_tab_bg"]
+                    foreground = colors["light_red"],
+                    background = colors["dark_grey"]
                 ),
                 widget.WindowName(
-                    foreground = colors["other_screen_tabs"]
+                    foreground = colors["purple"]
                 ),
                 
                 widget.TextBox(
-                    background = colors["other_screen_tabs"],
+                    background = colors["white"],
+                    foreground = colors["black_grey"],
                     text = "AlexJavor-MAIN", 
                     name="default"
                 ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2635"),
                 widget.CurrentLayout(**widget_defaults),
-                #widget.Battery(**widget_defaults),
-                widget.ThermalSensor(**widget_defaults),
-                widget.CheckUpdates(
-                    distro = 'Ubuntu'
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\U0001F50B"),
+                widget.Battery(
+                    format = '{percent:2.0%}'
                 ),
-                widget.Systray(),
-                widget.Net(interface="wlp5s0"),
-                widget.Volume(**widget_defaults),
-                widget.Clock(format='%A, %d/%m/%Y - %H:%M'),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Net(
+                    interface = "wlp5s0",
+                    format = '{interface}: {down} ⇵ {up}'
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                # Volume
+                widget.TextBox(text = "\U0001F50A"),
+                widget.GenPollText(
+                    func=get_current_volume,
+                    update_interval=0.2,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2328"),
+                widget.GenPollText(
+                    func=get_kb_layout,
+                    update_interval=0.5,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
             ],
             30,
         ),
     ),
+
+    ########################## "AlexJavor-SECONDARY-1" ############################
     Screen(
         top=bar.Bar(
             [
                 widget.Sep(
                     linewidth = 0,
-                    padding = 6,
-                    foreground = colors["group_names"],
-                    background = colors["panel_bg"]
+                    padding = 10,
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
                 ),
-                widget.GroupBox(),
-                widget.Prompt(),
-                widget.WindowName(),
-                widget.TextBox("AlexJavor-SECONDARY-1", name="default"),
-                widget.Systray(),
-                widget.Net(interface="wlp5s0"),
-                widget.Clock(format='%Y-%m-%d %a %I:%M %p'),
+                widget.GroupBox(font="Ubuntu Bold",
+                    fontsize = 12,
+                    margin_x = 0,
+                    margin_y = 0,
+                    padding_x = 8,
+                    padding_y = 8,
+                    borderwidth = 1,
+                    active = colors["white"],
+                    inactive = colors["white"],
+                    highlight_method = "block",
+                    rounded = False,
+                    this_current_screen_border = colors["purple"],
+                    this_screen_border = colors["dark_grey"],
+                    other_current_screen_border = colors["black_grey"],
+                    other_screen_border = colors["black_grey"],
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
+                ),
+                widget.Prompt(
+                    prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
+                    font = "Ubuntu Mono",
+                    padding = 10,
+                    foreground = colors["light_red"],
+                    background = colors["dark_grey"]
+                ),
+                widget.WindowName(
+                    foreground = colors["purple"]
+                ),
+                
+                widget.TextBox(
+                    background = colors["french_blue"],
+                    foreground = colors["white"],
+                    text = "AlexJavor-SECONDARY-1", 
+                    name="default"
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2635"),
+                widget.CurrentLayout(**widget_defaults),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\U0001F50B"),
+                widget.Battery(
+                    format = '{percent:2.0%}'
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Net(
+                    interface = "wlp5s0",
+                    format = '{interface}: {down} ⇵ {up}'
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                # Volume
+                widget.TextBox(text = "\U0001F50A"),
+                widget.GenPollText(
+                    func=get_current_volume,
+                    update_interval=0.2,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2328"),
+                widget.GenPollText(
+                    func=get_kb_layout,
+                    update_interval=0.5,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
             ],
             30,
         ),
     ),
+
+    ########################## "AlexJavor-SECONDARY-2" ############################
     Screen(
         top=bar.Bar(
             [
                 widget.Sep(
                     linewidth = 0,
-                    padding = 6,
-                    foreground = colors["group_names"],
-                    background = colors["panel_bg"]
+                    padding = 10,
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
                 ),
-                widget.GroupBox(),
-                widget.Prompt(),
-                widget.WindowName(),
-                widget.TextBox("AlexJavor-SECONDARY-2", name="default"),
-                widget.Systray(),
-                widget.Net(interface="wlp5s0"),
-                widget.Clock(format='%Y-%m-%d %a %I:%M %p'),
+                widget.GroupBox(font="Ubuntu Bold",
+                    fontsize = 12,
+                    margin_x = 0,
+                    margin_y = 0,
+                    padding_x = 8,
+                    padding_y = 8,
+                    borderwidth = 1,
+                    active = colors["white"],
+                    inactive = colors["white"],
+                    highlight_method = "block",
+                    rounded = False,
+                    this_current_screen_border = colors["purple"],
+                    this_screen_border = colors["dark_grey"],
+                    other_current_screen_border = colors["black_grey"],
+                    other_screen_border = colors["black_grey"],
+                    foreground = colors["white"],
+                    background = colors["black_grey"]
+                ),
+                widget.Prompt(
+                    prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
+                    font = "Ubuntu Mono",
+                    padding = 10,
+                    foreground = colors["light_red"],
+                    background = colors["dark_grey"]
+                ),
+                widget.WindowName(
+                    foreground = colors["purple"]
+                ),
+                
+                widget.TextBox(
+                    background = colors["french_red"],
+                    foreground = colors["white"],
+                    text = "AlexJavor-SECONDARY-2", 
+                    name="default"
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2635"),
+                widget.CurrentLayout(**widget_defaults),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\U0001F50B"),
+                widget.Battery(
+                    format = '{percent:2.0%}'
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Net(
+                    interface = "wlp5s0",
+                    format = '{interface}: {down} ⇵ {up}'
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                # Volume
+                widget.TextBox(text = "\U0001F50A"),
+                widget.GenPollText(
+                    func=get_current_volume,
+                    update_interval=0.2,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.TextBox(text = "\u2328"),
+                widget.GenPollText(
+                    func=get_kb_layout,
+                    update_interval=0.5,
+                ),
+
+                widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
             ],
             30,
         ),
-    )
+    ),
 ]
 
 # Drag floating layouts.

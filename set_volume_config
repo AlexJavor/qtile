@@ -1,5 +1,9 @@
 #!/bin/bash
 
+################################################################
+# !!!!!!! DEPRACATED IN UBUNTU 20.04.1 -> Use of PACTL !!!!!!! #
+################################################################
+
 # By Alexandre Javornik
 
 # TODO - Possibility to go over 100%!!!!!!!
@@ -23,10 +27,13 @@ else
 fi
 
 getvolume() {
-    pacmd list-sinks | awk '/^\svolume:/{i++} i=='$sink'{print $5+0; exit}'
+    #pacmd list-sinks | awk '/^\svolume:/{i++} i=='$sink'{print $5+0; exit}'
+    #new command
+    pacmd list-sinks | grep volume:\ front | awk '{i++} i=='$sink'{print $5+0}'
 }
 getmuted() {
-    pacmd list-sinks | awk '/^\smuted:/{i++} i=='$sink'{print $2; exit}'
+    #pacmd list-sinks | awk '/^\smuted:/{i++} i=='$sink'{print $2; exit}'
+    pacmd list-sinks | grep muted | awk '{i++} i=='$sink'{print $2}'
 }
 
 if [ $1 -eq 1 ] || [ $1 -eq 2 ]
@@ -35,11 +42,11 @@ then
     let index="$1 - 1"
     if [ $2 = "+" ] || [ $2 = "-" ]
     then
-        #echo $(getvolume)
+        echo $(getvolume)
         let new_percentage="$(getvolume) $2 $3"
-        #echo $new_percentage
+        echo $new_percentage
         let new_volume="($new_percentage*65536)/100"
-        #echo $new_volume
+        echo $new_volume
         if [ $new_percentage -lt 0 ]
         then
             pacmd set-sink-volume $index 0

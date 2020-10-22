@@ -137,6 +137,9 @@ keys = [
 
     # Open Firefox
     Key([mod], "f", lazy.spawn("firefox")),
+    
+    # Open Pavucontrol
+    Key([mod], "p", lazy.spawn("pavucontrol")),
 
     # Reload Multiple Screens (2 Screens)
     Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),
@@ -268,7 +271,7 @@ screens = [
                 ),
 
                 widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
+                widget.Clock(format='🕒 %A, %d %b. %Y - %H:%M'), # %S for adding seconds
             ],
             30,
         ),
@@ -352,7 +355,7 @@ screens = [
                 ),
 
                 widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
+                widget.Clock(format='🕒 %A, %d %b. %Y - %H:%M'),
             ],
             30,
         ),
@@ -436,7 +439,7 @@ screens = [
                 ),
 
                 widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-                widget.Clock(format='🕒 %A, %d/%m/%Y - %H:%M'),
+                widget.Clock(format='🕒 %A, %d %b. %Y - %H:%M'),
             ],
             30,
         ),

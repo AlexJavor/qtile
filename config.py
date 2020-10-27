@@ -87,9 +87,27 @@ def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
     return kb_layout
 
-def get_current_volume():
+def get_current_volume1():
     volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==1{print $5+0}'")
-    return volume + "%"
+    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==1{print $2}'")
+    if(volume == ""):
+        return "N/A"
+    else:
+        if(muted == "yes"):
+            return "M"
+        else:
+            return volume + "%"
+    
+def get_current_volume2():
+    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==2{print $5+0}'")
+    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==2{print $2}'")
+    if(volume == ""):
+        return "N/A"
+    else:
+        if(muted == "yes"):
+            return "M"
+        else:
+            return volume + "%"
     
 # Not used
 #def get_keycode():
@@ -142,6 +160,9 @@ keys = [
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
 
+    # Open config
+    Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
+
     # Reload Multiple Screens (2 Screens)
     Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),
     # Reload Multiple Screens (3 Screens)
@@ -170,15 +191,28 @@ keys = [
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
-group_names = 'DEV WWW SYS DOC VBOX CHAT MUS VID GFX'.split()
-groups = [Group(name, layout='max') for name in group_names]
+group_names = [("DEV", {'layout': 'monadtall'}),
+               ("WWW", {'layout': 'monadtall'}),
+               ("SYS", {'layout': 'monadtall'}),
+               ("DOC", {'layout': 'monadtall'}),
+               ("VBOX", {'layout': 'monadtall'}),
+               ("CHAT", {'layout': 'monadtall'}),
+               ("MUS", {'layout': 'monadtall'}),
+               ("VID", {'layout': 'monadtall'}),
+               ("GFX", {'layout': 'floating'})]
 
-for i, name in enumerate(group_names):
+#group_names = 'DEV WWW SYS DOC VBOX CHAT MUS VID GFX'.split()
+
+#groups = [Group(name, layout='max') for name in group_names]
+groups = [Group(name, **kwargs) for name, kwargs in group_names]
+
+for i, (name, kwargs) in enumerate(group_names, 0):
+#for i, name in enumerate(group_names):
     # indx = str(i + 1)
     keypad_indx = group_numbers_current[i]
-    keys += [
-        Key([mod], keypad_indx, lazy.group[name].toscreen()),
-        Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name))]
+    keys.append(Key([mod], keypad_indx, lazy.group[name].toscreen()))
+    keys.append(Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name)))
+        
 
 
 layout_theme = {
@@ -294,16 +328,21 @@ def init_widgets_list():
             format = '{percent:2.0%}'
         ),
 
-        #widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
         # Volume
         widget.TextBox(text = "\U0001F50A"),
         widget.GenPollText(
-            func=get_current_volume,
+            func=get_current_volume1,
+            update_interval=0.2,
+        ),
+        widget.TextBox(text = "\U0001F50A"),
+        widget.GenPollText(
+            func=get_current_volume2,
             update_interval=0.2,
         ),
 
-        #widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
         widget.TextBox(text = "\u2328"),
         widget.GenPollText(
@@ -358,7 +397,22 @@ main = None
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating()
+floating_layout = layout.Floating(float_rules=[
+    {'wmclass': 'confirm'},
+    {'wmclass': 'dialog'},
+    {'wmclass': 'download'},
+    {'wmclass': 'error'},
+    {'wmclass': 'file_progress'},
+    {'wmclass': 'notification'},
+    {'wmclass': 'splash'},
+    {'wmclass': 'toolbar'},
+    {'wmclass': 'confirmreset'},  # gitk
+    {'wmclass': 'makebranch'},  # gitk
+    {'wmclass': 'maketag'},  # gitk
+    {'wname': 'branchdialog'},  # gitk
+    {'wname': 'pinentry'},  # GPG key password entry
+    {'wmclass': 'ssh-askpass'},  # ssh-askpass
+])
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 extentions = []

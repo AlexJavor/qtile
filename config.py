@@ -191,15 +191,15 @@ keys = [
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
-group_names = [("DEV", {'layout': 'monadtall'}),
-               ("WWW", {'layout': 'monadtall'}),
-               ("SYS", {'layout': 'monadtall'}),
-               ("DOC", {'layout': 'monadtall'}),
+group_names = [("DEV",  {'layout': 'monadtall'}),
+               ("WWW",  {'layout': 'monadtall'}),
+               ("SYS",  {'layout': 'monadtall'}),
+               ("DOC",  {'layout': 'monadtall'}),
                ("VBOX", {'layout': 'monadtall'}),
                ("CHAT", {'layout': 'monadtall'}),
-               ("MUS", {'layout': 'monadtall'}),
-               ("VID", {'layout': 'monadtall'}),
-               ("GFX", {'layout': 'floating'})]
+               ("MAIL", {'layout': 'monadtall'}),
+               ("VPN",  {'layout': 'monadtall'}),
+               ("GFX",  {'layout': 'floating'})]
 
 #group_names = 'DEV WWW SYS DOC VBOX CHAT MUS VID GFX'.split()
 
@@ -217,7 +217,7 @@ for i, (name, kwargs) in enumerate(group_names, 0):
 
 layout_theme = {
     "border_width": 2,
-    "margin": 10,
+    "margin": 20,
     "border_focus": "e1acff",
     "border_normal": "1D2330"
 }
@@ -231,7 +231,7 @@ layouts = [
 
 widget_defaults = dict(
     font='Ubuntu Bold',
-    fontsize=12,
+    fontsize=11,
     padding=3,
     background = colors["black_grey"] 
 )
@@ -252,9 +252,9 @@ def init_widgets_list():
             background = colors["black_grey"]
         ),
         widget.GroupBox(font="Ubuntu Bold",
-            fontsize = 12,
+            #fontsize = 12,
             margin_x = 0,
-            margin_y = 0,
+            margin_y = 2,
             padding_x = 8,
             padding_y = 8,
             borderwidth = 1,
@@ -290,25 +290,37 @@ def init_widgets_list():
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
+        widget.Image(
+            filename = "~/.config/qtile/icons/rj45.png",
+            margin = 2,
+            margin_x = 5
+        ),
         widget.Net(
             interface = "wlp5s0",
-            format = '{interface}: {down} ▼▲ {up}'
+            format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        
+        widget.Image(
+            filename = "~/.config/qtile/icons/processor.png",
+            margin = 2,
+            margin_x = 5
+        ),
         widget.CPU(
-            format = 'CPU: {load_percent}%'
+            format = '{load_percent}%'
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
+        widget.Image(
+            filename = "~/.config/qtile/icons/ram.png",
+            margin = 2,
+            margin_x = 5
+        ),
         widget.Memory(
                 foreground = colors["white"],
                 background = colors["black_grey"],
                 padding = 5,
-                format = 'RAM: {MemUsed}Mb ({MemPercent}%)'
+                format = '{MemUsed}Mb ({MemPercent}%)'
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
@@ -370,9 +382,9 @@ def init_widgets_screen3():
     return widgets_screen3            
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=25)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=25)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=25))]
 
 
 if __name__ in ["config", "__main__"]:

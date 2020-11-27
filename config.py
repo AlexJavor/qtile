@@ -137,13 +137,17 @@ keys = [
 
     # Open Firefox
     Key([mod], "f", lazy.spawn("firefox")),
+    # Open Tor Browser
+    Key([mod], "t", lazy.spawn("torbrowser-launcher")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
     # Open config
     Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
 
-    # Reload Multiple Screens (2 Screens)
+    # Reload Multiple Screens (2 Screens - Main + Left)
     Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),
+    # Reload Multiple Screens (2 Screens - Main + Right)
+    Key([mod, "shift"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1600x900  --right-of " + main_screen)),
     # Reload Multiple Screens (3 Screens)
     Key([mod, "control"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen + " --output " + displayport_screen + " --mode 1600x900 --right-of " + main_screen)),
 

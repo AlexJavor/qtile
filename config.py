@@ -179,10 +179,10 @@ group_names = [("DEV",  {'layout': 'monadtall'}),
                ("WWW",  {'layout': 'monadtall'}),
                ("SYS",  {'layout': 'monadtall'}),
                ("DOC",  {'layout': 'monadtall'}),
-               ("VBOX", {'layout': 'monadtall'}),
+               ("VM",   {'layout': 'monadtall'}),
                ("CHAT", {'layout': 'monadtall'}),
                ("OBS",  {'layout': 'monadtall'}),
-               ("VPN",  {'layout': 'monadtall'}),
+               ("VPS",  {'layout': 'monadtall'}),
                ("GFX",  {'layout': 'floating'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]

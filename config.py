@@ -263,7 +263,7 @@ def init_widgets_list():
         widget.TextBox(
             background = colors["white"],
             foreground = colors["black_grey"],
-            text = "AlexJavor-MAIN", 
+            text = "SkrivRoot-MAIN", 
             name="default"
         ),
 
@@ -278,7 +278,7 @@ def init_widgets_list():
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
 
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/processor.png",
             margin = 2,
@@ -288,7 +288,7 @@ def init_widgets_list():
             format = '{load_percent}%'
         ),
 
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/ram.png",
             margin = 2,
@@ -301,6 +301,28 @@ def init_widgets_list():
                 format = '{MemUsed}Mb ({MemPercent}%)'
         ),
 
+        widget.Sep(linewidth = 0, padding = 3),
+        widget.Image(
+            filename = "~/.config/qtile/icons/hard_drive.png",
+            margin = 2,
+            margin_x = 5
+        ),
+        widget.DF(
+                foreground = colors["white"],
+                background = colors["black_grey"],
+                padding = 5,
+                partition = '/',
+                format = '{uf}Gb ({r:.0f}%)',
+                visible_on_warn = False,
+                warn_space = 10
+        ),
+
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+        widget.BitcoinTicker(
+            foreground = "#f7931a"
+        ),
+
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         widget.CurrentLayoutIcon(
@@ -309,7 +331,7 @@ def init_widgets_list():
             padding = 0,
             scale = 0.5
         ),
-        widget.CurrentLayout(**widget_defaults),
+        #widget.CurrentLayout(**widget_defaults),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
@@ -342,7 +364,7 @@ def init_widgets_list():
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
-        widget.Clock(format='📅  %A, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
+        widget.Clock(format='📅  %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
     ]
     return widgets_list
 
@@ -353,12 +375,12 @@ def init_widgets_screen1():
 
 def init_widgets_screen2():
     widgets_screen2 = init_widgets_list()
-    widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "AlexJavor-SECONDARY-1", name="default")
+    widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "HDMI-Left", name="default")
     return widgets_screen2
 
 def init_widgets_screen3():
     widgets_screen3 = init_widgets_list()
-    widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "AlexJavor-SECONDARY-2", name="default")
+    widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "DP-Right", name="default")
     return widgets_screen3            
 
 def init_screens():

@@ -64,6 +64,12 @@ group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
 group_numbers_current = group_numbers_kp
 
+def xmr_ticker():
+    xmr_price = subprocess.getoutput("curl -s eur.rate.sx/1xmr")
+    xmr_price_split = xmr_price.split(".")
+    xmr_price_shown = xmr_price_split[0] + "." + xmr_price_split[1][:2]
+    return "XMR: " + xmr_price_shown + "€"
+
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
     return kb_layout
@@ -141,6 +147,8 @@ keys = [
     Key([mod], "t", lazy.spawn("torbrowser-launcher")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
+    # Open Session
+    Key([mod], "s", lazy.spawn("./SourceCode/Session/session-desktop-linux-x86_64-1.4.4.AppImage")),
     # Open config
     Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
 
@@ -319,8 +327,16 @@ def init_widgets_list():
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
+        # Bitcoin ticker
         widget.BitcoinTicker(
             foreground = "#f7931a"
+        ),
+
+        # Monero ticker
+        widget.GenPollText(
+            func=xmr_ticker,
+            update_interval=30,
+            foreground = "#fc6a03"
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),

@@ -217,7 +217,7 @@ layouts = [
 
 widget_defaults = dict(
     font='Ubuntu Bold',
-    fontsize=11,
+    fontsize=9,
     padding=3,
     background = colors["black_grey"] 
 )
@@ -282,7 +282,7 @@ def init_widgets_list():
             margin_x = 5
         ),
         widget.Net(
-            interface = "wlp5s0",
+            interface = "wlp2s0",
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
 
@@ -319,7 +319,7 @@ def init_widgets_list():
                 foreground = colors["white"],
                 background = colors["black_grey"],
                 padding = 5,
-                partition = '/',
+                partition = '/home',
                 format = '{uf}Gb ({r:.0f}%)',
                 visible_on_warn = False,
                 warn_space = 10
@@ -400,9 +400,9 @@ def init_widgets_screen3():
     return widgets_screen3            
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=25))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=20)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=20)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=20))]
 
 
 if __name__ in ["config", "__main__"]:

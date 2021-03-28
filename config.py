@@ -70,6 +70,18 @@ def xmr_ticker():
     xmr_price_shown = xmr_price_split[0] + "." + xmr_price_split[1][:2]
     return "XMR: " + xmr_price_shown + "€"
 
+def get_current_country():
+    public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
+    country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
+    return country
+
+def get_vpn_status():
+    tun_status = subprocess.getoutput("ifconfig tun0")
+    if "Device not found" in tun_status:
+        return "\U0000274C"
+    else:
+        return "\U00002705"
+        
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
     return kb_layout
@@ -284,6 +296,21 @@ def init_widgets_list():
         widget.Net(
             interface = "wlp5s0",
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
+        ),
+        widget.TextBox(
+            text = "\U000027A4 VPN ",
+            foreground = "#33cc00"
+        ),
+        # VPN Status + Public IP Country
+        widget.GenPollText(
+            func=get_vpn_status,
+            update_interval=5,
+            foreground = "#33cc00"
+        ),
+        widget.GenPollText(
+            func=get_current_country,
+            update_interval=5,
+            foreground = "#33cc00"
         ),
 
         widget.Sep(linewidth = 0, padding = 3),

@@ -15,6 +15,9 @@
 # ************** default_config path *************** #
 # /usr/lib/python3/dist-packages/libqtile/resources/default_config.py
 
+# ************** Arch default libqtile path ******** #
+# /usr/lib/python3.9/site-packages/libqtile/
+
 import os
 import subprocess
 import platform
@@ -22,6 +25,7 @@ import socket
 from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.command import lazy
 from libqtile import layout, bar, widget, hook
+from libqtile.log_utils import logger
 import os
 import subprocess
 
@@ -45,8 +49,11 @@ colors = {
     "french_red" : "#ef4135"
 }
 
-sound_card_output_HDMI = '1'
-sound_card_output_PC = '2'
+sound_card_index_HDMI = 'TBD'
+sound_card_index_PC   = 'TBD'
+sound_card_order_HDMI = 'TBD'
+sound_card_order_PC   = 'TBD'
+
 main_screen = 'eDP-1'
 hdmi_screen = 'HDMI-1'
 displayport_screen = 'DP-1'
@@ -74,21 +81,38 @@ def get_current_country():
     public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
     country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
     return country
-
-def get_vpn_status():
-    tun_status = subprocess.getoutput("ifconfig tun0")
-    if "Device not found" in tun_status:
-        return "\U0000274C"
-    else:
-        return "\U00002705"
-        
+ 
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
     return kb_layout
 
-def get_current_volume1():
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==1{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==1{print $2}'")
+def get_index_volume():
+    sink1_name  = subprocess.getoutput("pacmd list-sinks | grep alsa.name | awk '{i++} i==1{print}' | cut -f 2 -d '=' | cut -f 2 -d '\"'")
+    sink1_index = subprocess.getoutput("pacmd list-sinks | grep index | awk '{i++} i==1{print}' | cut -f 2 -d ':' | cut -f 2 -d ' '")
+    sink2_name  = subprocess.getoutput("pacmd list-sinks | grep alsa.name | awk '{i++} i==2{print}' | cut -f 2 -d '=' | cut -f 2 -d '\"'")
+    sink2_index = subprocess.getoutput("pacmd list-sinks | grep index | awk '{i++} i==2{print}' | cut -f 2 -d ':' | cut -f 2 -d ' '")
+    global sound_card_index_PC
+    global sound_card_index_HDMI
+    global sound_card_order_PC 
+    global sound_card_order_HDMI
+    
+    if(sink1_name == 'ALC892 Analog' and sink2_name == 'HDMI 0'):
+        sound_card_index_PC   = sink1_index
+        sound_card_index_HDMI = sink2_index
+        sound_card_order_PC   = "1"
+        sound_card_order_HDMI = "2"
+    elif(sink1_name == 'HDMI 0' and sink2_name == 'ALC892 Analog'):
+        sound_card_index_PC   = sink2_index
+        sound_card_index_HDMI = sink1_index
+        sound_card_order_PC   = "2"
+        sound_card_order_HDMI = "1"
+    else:
+        logger.warning("ERROR: There is a sound card NOT DEFINED! - Check get_index_volume()")
+
+def get_current_volume_ALC892Analog():
+    get_index_volume()
+    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + sound_card_order_PC + "{print $5+0}'")
+    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + sound_card_order_PC + "{print $2}'")
     if(volume == ""):
         return "N/A"
     else:
@@ -97,9 +121,10 @@ def get_current_volume1():
         else:
             return volume + "%"
     
-def get_current_volume2():
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==2{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==2{print $2}'")
+def get_current_volume_HDMI0():        
+    get_index_volume()
+    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + sound_card_order_HDMI + "{print $5+0}'")
+    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + sound_card_order_HDMI + "{print $2}'")
     if(volume == ""):
         return "N/A"
     else:
@@ -112,7 +137,7 @@ def get_current_volume2():
 #def get_keycode():
 #    keycode = subprocess.getoutput("xmodmap -pke | grep KP_1 | awk '{print $2}'")
 #    return keycode
-
+get_index_volume()
 keys = [
     # Main key bindings
     Key([mod], "k", lazy.layout.down()),
@@ -171,14 +196,14 @@ keys = [
     # Reload Multiple Screens (3 Screens)
     Key([mod, "control"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen + " --output " + displayport_screen + " --mode 1600x900 --right-of " + main_screen)),
 
-    # Output volume control HDMI
-    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI + " -5%")),
-    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI+ " +5%")),
-    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_HDMI + " toggle")), 
     # Output volume control PC
-    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " -5%")),
-    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " +5%")),
-    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_PC + " toggle")),
+    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " -5%")),
+    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " +5%")),
+    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_PC + " toggle")),
+    # Output volume control HDMI
+    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI + " -5%")),
+    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI+ " +5%")),
+    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_HDMI + " toggle")), 
 
     # Brightness and state control Main Screen (PC)
     Key([], 'XF86MonBrightnessUp', lazy.spawn("brightness " + main_screen + " + 50 ")),
@@ -223,7 +248,6 @@ layout_theme = {
 layouts = [
     layout.MonadTall(**layout_theme, ratio=0.6),
     layout.Max(**layout_theme),
-    layout.Stack(num_stacks=2),
     layout.Floating(**layout_theme)
 ]
 
@@ -280,14 +304,6 @@ def init_widgets_list():
             foreground = colors["purple"]
         ),
         
-        widget.TextBox(
-            background = colors["white"],
-            foreground = colors["black_grey"],
-            text = "SkrivRoot-MAIN", 
-            name="default"
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         widget.Image(
             filename = "~/.config/qtile/icons/rj45.png",
             margin = 2,
@@ -297,26 +313,11 @@ def init_widgets_list():
             interface = "wlp5s0",
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
-        widget.TextBox(
-            text = "\U000027A4 VPN ",
-            foreground = "#33cc00"
-        ),
-        # VPN Status + Public IP Country
-        widget.GenPollText(
-            func=get_vpn_status,
-            update_interval=5,
-            foreground = "#33cc00"
-        ),
-        widget.GenPollText(
-            func=get_current_country,
-            update_interval=5,
-            foreground = "#33cc00"
-        ),
-
+        
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/processor.png",
-            margin = 2,
+            margin = 4,
             margin_x = 5
         ),
         widget.CPU(
@@ -338,8 +339,8 @@ def init_widgets_list():
 
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
-            filename = "~/.config/qtile/icons/hard_drive.png",
-            margin = 2,
+            filename = "~/.config/qtile/icons/floppy-disk.png",
+            margin = 5,
             margin_x = 5
         ),
         widget.DF(
@@ -356,7 +357,8 @@ def init_widgets_list():
 
         # Bitcoin ticker
         widget.BitcoinTicker(
-            foreground = "#f7931a"
+            foreground = "#f7931a",
+            currency="EUR",
         ),
 
         # Monero ticker
@@ -378,36 +380,50 @@ def init_widgets_list():
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
-        widget.TextBox(text = "\U0001F50B"),
+        widget.BatteryIcon(
+            battery=0
+        ),
         widget.Battery(
             format = '{percent:2.0%}'
         ),
-
+        
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
         # Volume
-        widget.TextBox(text = "\U0001F50A"),
-        widget.GenPollText(
-            func=get_current_volume1,
-            update_interval=0.2,
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 5,
+            margin_x = 5
         ),
-        widget.TextBox(text = "\U0001F50A"),
         widget.GenPollText(
-            func=get_current_volume2,
-            update_interval=0.2,
+            func=get_current_volume_ALC892Analog,
+            update_interval=0.1
+        ), 
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 5,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=get_current_volume_HDMI0,
+            update_interval=0.1
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
-        widget.TextBox(text = "\u2328"),
+        widget.Image(
+            filename = "~/.config/qtile/icons/keyboard.png",
+            margin = 6,
+            margin_x = 5
+        ),
+        
         widget.GenPollText(
             func=get_kb_layout,
             update_interval=0.5,
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        
-        widget.Clock(format='📅  %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
+        widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
     ]
     return widgets_list
 
@@ -418,12 +434,22 @@ def init_widgets_screen1():
 
 def init_widgets_screen2():
     widgets_screen2 = init_widgets_list()
-    widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "HDMI-Left", name="default")
+    widgets_screen2[0] = widget.Image(
+            filename = "~/.config/qtile/icons/trioptimum-logo-blue.png",
+            margin = 2,
+            margin_x = 5
+    )
+    #widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "HDMI-Left", name="default")
     return widgets_screen2
 
 def init_widgets_screen3():
     widgets_screen3 = init_widgets_list()
-    widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "DP-Right", name="default")
+    widgets_screen3[0] = widget.Image(
+            filename = "~/.config/qtile/icons/trioptimum-logo-red.png",
+            margin = 2,
+            margin_x = 5
+    )
+    #widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "DP-Right", name="default")
     return widgets_screen3            
 
 def init_screens():
@@ -434,9 +460,6 @@ def init_screens():
 
 if __name__ in ["config", "__main__"]:
     screens = init_screens()
-    widgets_list = init_widgets_list()
-    widgets_screen1 = init_widgets_screen1()
-    widgets_screen2 = init_widgets_screen2()
 
 
 # Drag floating layouts.

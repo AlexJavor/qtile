@@ -75,7 +75,7 @@ def xmr_ticker():
     xmr_price = subprocess.getoutput("curl -s eur.rate.sx/1xmr")
     xmr_price_split = xmr_price.split(".")
     xmr_price_shown = xmr_price_split[0] + "." + xmr_price_split[1][:2]
-    return "XMR: " + xmr_price_shown + "€"
+    return xmr_price_shown + "€"
 
 def get_current_country():
     public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
@@ -107,7 +107,7 @@ def get_index_volume():
         sound_card_order_PC   = "2"
         sound_card_order_HDMI = "1"
     else:
-        logger.warning("ERROR: There is a sound card NOT DEFINED! - Check get_index_volume()")
+        logger.warning("ERROR: Check get_index_volume() - Values: \n - sink1_name: " + sink1_name + "\n - sink2_name: " + sink2_name + "\n - sink1_index: " + sink1_index  + "\n - sink2_index: " + sink2_index)
 
 def get_current_volume_ALC892Analog():
     get_index_volume()
@@ -220,15 +220,15 @@ keys = [
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
-group_names = [("DEV",  {'layout': 'monadtall'}),
-               ("WWW",  {'layout': 'monadtall'}),
-               ("SYS",  {'layout': 'monadtall'}),
-               ("DOC",  {'layout': 'monadtall'}),
-               ("VM",   {'layout': 'monadtall'}),
-               ("CHAT", {'layout': 'monadtall'}),
-               ("OBS",  {'layout': 'monadtall'}),
-               ("VPS",  {'layout': 'monadtall'}),
-               ("GFX",  {'layout': 'floating'})]
+group_names = [("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",   {'layout': 'monadtall'}),
+               ("", {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'floating'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
@@ -252,9 +252,10 @@ layouts = [
 ]
 
 widget_defaults = dict(
-    font='Ubuntu Bold',
-    fontsize=11,
-    padding=3,
+    #font='nerd-fonts-fira-code',
+    font='Caskaydia Cove Nerd Font',
+    fontsize=12,
+    padding=7,
     background = colors["black_grey"] 
 )
 
@@ -273,13 +274,13 @@ def init_widgets_list():
             foreground = colors["white"],
             background = colors["black_grey"]
         ),
-        widget.GroupBox(font="Ubuntu Bold",
-            #fontsize = 12,
-            margin_x = 0,
-            margin_y = 2,
-            padding_x = 8,
-            padding_y = 8,
-            borderwidth = 1,
+        widget.GroupBox(
+            fontsize = 26,
+            margin_x = 5,
+            margin_y = 3,
+            padding_x = 10,
+            padding_y = 5,
+            borderwidth = 2,
             active = colors["white"],
             inactive = colors["white"],
             highlight_method = "block",
@@ -294,7 +295,6 @@ def init_widgets_list():
 
         widget.Prompt(
             prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
-            font = "Ubuntu Mono",
             padding = 10,
             foreground = colors["light_red"],
             background = colors["dark_grey"]
@@ -306,7 +306,7 @@ def init_widgets_list():
         
         widget.Image(
             filename = "~/.config/qtile/icons/rj45.png",
-            margin = 2,
+            margin = 3,
             margin_x = 5
         ),
         widget.Net(
@@ -317,7 +317,7 @@ def init_widgets_list():
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/processor.png",
-            margin = 4,
+            margin = 5,
             margin_x = 5
         ),
         widget.CPU(
@@ -327,20 +327,20 @@ def init_widgets_list():
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/ram.png",
-            margin = 2,
+            margin = 3,
             margin_x = 5
         ),
         widget.Memory(
                 foreground = colors["white"],
                 background = colors["black_grey"],
                 padding = 5,
-                format = '{MemUsed}Mb ({MemPercent}%)'
+                format = '{MemPercent}%'
         ),
 
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/floppy-disk.png",
-            margin = 5,
+            margin = 6,
             margin_x = 5
         ),
         widget.DF(
@@ -356,12 +356,22 @@ def init_widgets_list():
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         # Bitcoin ticker
+        widget.Image(
+            filename = "~/.config/qtile/icons/bitcoin.png",
+            margin = 6,
+            margin_x = 5
+        ),
         widget.BitcoinTicker(
             foreground = "#f7931a",
-            currency="EUR",
+            currency="EUR"
         ),
 
         # Monero ticker
+        widget.Image(
+            filename = "~/.config/qtile/icons/monero.png",
+            margin = 6,
+            margin_x = 5
+        ),
         widget.GenPollText(
             func=xmr_ticker,
             update_interval=30,
@@ -380,9 +390,14 @@ def init_widgets_list():
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
-        widget.BatteryIcon(
-            battery=0
+        widget.Image(
+            filename = "~/.config/qtile/icons/battery.png",
+            margin = 5,
+            margin_x = 5
         ),
+       # widget.BatteryIcon(
+       #     battery=0
+       # ),
         widget.Battery(
             format = '{percent:2.0%}'
         ),
@@ -392,7 +407,7 @@ def init_widgets_list():
         # Volume
         widget.Image(
             filename = "~/.config/qtile/icons/volume.png",
-            margin = 5,
+            margin = 6,
             margin_x = 5
         ),
         widget.GenPollText(
@@ -401,7 +416,7 @@ def init_widgets_list():
         ), 
         widget.Image(
             filename = "~/.config/qtile/icons/volume.png",
-            margin = 5,
+            margin = 6,
             margin_x = 5
         ),
         widget.GenPollText(
@@ -413,7 +428,7 @@ def init_widgets_list():
         
         widget.Image(
             filename = "~/.config/qtile/icons/keyboard.png",
-            margin = 6,
+            margin = 7,
             margin_x = 5
         ),
         
@@ -453,9 +468,9 @@ def init_widgets_screen3():
     return widgets_screen3            
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=25))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
 
 
 if __name__ in ["config", "__main__"]:

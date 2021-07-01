@@ -6,8 +6,8 @@
 #                                              |___/                                                          
 
 # IMPORTANT: Create simbolic links for the "set_brightness_config" and "set_volume_config":
-# ln -s ~/.config/qtile/set_volume_config volume
-# ln -s ~/.config/qtile/set_brightness_config brightness
+# ln -s ~/.config/qtile/set_volume_config /usr/bin/volume
+# ln -s ~/.config/qtile/set_brightness_config /usr/bin/brightness
 
 # ************** Log path *************** #
 # /home/$USER/.local/share/qtile/qtile.log
@@ -220,14 +220,14 @@ keys = [
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
-group_names = [("",  {'layout': 'monadtall'}),
+group_names = [("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'monadtall'}),
-               ("",   {'layout': 'monadtall'}),
-               ("", {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'floating'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
@@ -252,8 +252,9 @@ layouts = [
 ]
 
 widget_defaults = dict(
-    #font='nerd-fonts-fira-code',
-    font='Caskaydia Cove Nerd Font',
+    font='Fira Code Nerd Font',
+    #font='Caskaydia Cove Nerd Font',
+    #font='Ubuntu Bold',
     fontsize=12,
     padding=7,
     background = colors["black_grey"] 
@@ -275,16 +276,18 @@ def init_widgets_list():
             background = colors["black_grey"]
         ),
         widget.GroupBox(
-            fontsize = 26,
-            margin_x = 5,
+            fontsize = 28,
+            font="FontAwesome",
+            margin_x = 0,
             margin_y = 3,
-            padding_x = 10,
+            center_aligned = True,
+            padding_x = 12,
             padding_y = 5,
             borderwidth = 2,
-            active = colors["white"],
             inactive = colors["white"],
             highlight_method = "block",
             rounded = False,
+            active = colors["white"],
             this_current_screen_border = colors["purple"],
             this_screen_border = colors["dark_grey"],
             other_current_screen_border = colors["black_grey"],
@@ -438,7 +441,8 @@ def init_widgets_list():
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
+        #widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
+        widget.Clock(format='%d/%m/%Y - %H:%M:%S'), # %S for adding seconds
     ]
     return widgets_list
 

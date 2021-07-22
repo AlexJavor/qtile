@@ -131,22 +131,25 @@ def get_all_volume_sinks():
 
 
 def get_current_volume(sink_order):
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
-    if(volume == ""):
-        return "N/A"
+    if(sink_order == 'TBD'):
+        return "婢"
     else:
-        if(muted == "yes"):
-            # return "M"
-            return "ﱝ" # nf-mdi-volume_mute
+        volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
+        muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
+        if(volume == ""):
+            return "婢"
         else:
-            #return volume + "%"
-            if(int(volume) < 30):
-                return "奄" # nf-mdi-volume_low
-            elif (int(volume) >= 30 and int(volume) < 70):
-                return "奔" # nf-mdi-volume_medium
+            if(muted == "yes"):
+                # return "M"
+                return "ﱝ" # nf-mdi-volume_mute
             else:
-                return "墳" # nf-mdi-volume_high
+                #return volume + "%"
+                if(int(volume) < 30):
+                    return "奄" # nf-mdi-volume_low
+                elif (int(volume) >= 30 and int(volume) < 70):
+                    return "奔" # nf-mdi-volume_medium
+                else:
+                    return "墳" # nf-mdi-volume_high
     
 def get_current_volume_PC():
     get_all_volume_sinks()
@@ -158,7 +161,7 @@ def get_current_volume_BLUETOOTH():
     get_all_volume_sinks()
     #return get_current_volume(sound_card_order_BLUETOOTH)
     blutooth_volume = get_current_volume(sound_card_order_BLUETOOTH)
-    if(blutooth_volume == "N/A"):
+    if(blutooth_volume == "婢"):
         return "ﳌ" # Nerd fonts: nf-mdi-headphones_off
     else:
         return "" # Nerd fonts: nf-mdi-headphones

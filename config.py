@@ -34,9 +34,11 @@ def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call([home])
 
+# *************** Global Variables ***************** #
 my_terminal= "terminator"
 alt = "mod1"
 mod = "mod4"
+network_interface="wlp5s0"
 
 colors = {
     "black_grey" : "#282A36",   # panel_bg
@@ -49,10 +51,12 @@ colors = {
     "french_red" : "#ef4135"
 }
 
-sound_card_index_HDMI = 'TBD'
-sound_card_index_PC   = 'TBD'
-sound_card_order_HDMI = 'TBD'
-sound_card_order_PC   = 'TBD'
+sound_card_index_PC        = 'TBD'
+sound_card_index_HDMI      = 'TBD'
+sound_card_index_BLUETOOTH = 'TBD'
+sound_card_order_PC        = 'TBD'
+sound_card_order_HDMI      = 'TBD'
+sound_card_order_BLUETOOTH = 'TBD'
 
 main_screen = 'eDP-1'
 hdmi_screen = 'HDMI-1'
@@ -60,84 +64,111 @@ displayport_screen = 'DP-1'
 
 max_percentage_volume = '100' # Maximum Percentage: 150%
 
-selected_screen = {
-    "MainPC": "eDP-1",
-    "TV": "HDMI-1",
-    "DisplayPortScreen": "DP-1"
-}
-
 group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
 group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
 group_numbers_current = group_numbers_kp
+# **************************************************** #
 
-def xmr_ticker():
-    xmr_price = subprocess.getoutput("curl -s eur.rate.sx/1xmr")
-    xmr_price_split = xmr_price.split(".")
-    xmr_price_shown = xmr_price_split[0] + "." + xmr_price_split[1][:2]
-    return xmr_price_shown + "€"
+#***** Crypto tickers ***** #
+def crypto_ticker(unit):
+    price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
+    price_split = price.split(".")
+    price_shown = price_split[0] + "." + price_split[1][:2]
+    return price_shown + "€"
+
+def xmr_ticker(): return crypto_ticker("xmr") 
+def btc_ticker(): return crypto_ticker("btc") 
+#****************************#
 
 def get_current_country():
     public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
     country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
-    return country
- 
+    return country.upper()
+
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
-    return kb_layout
+    return kb_layout.upper()
 
-def get_index_volume():
-    sink1_name  = subprocess.getoutput("pacmd list-sinks | grep alsa.name | awk '{i++} i==1{print}' | cut -f 2 -d '=' | cut -f 2 -d '\"'")
-    sink1_index = subprocess.getoutput("pacmd list-sinks | grep index | awk '{i++} i==1{print}' | cut -f 2 -d ':' | cut -f 2 -d ' '")
-    sink2_name  = subprocess.getoutput("pacmd list-sinks | grep alsa.name | awk '{i++} i==2{print}' | cut -f 2 -d '=' | cut -f 2 -d '\"'")
-    sink2_index = subprocess.getoutput("pacmd list-sinks | grep index | awk '{i++} i==2{print}' | cut -f 2 -d ':' | cut -f 2 -d ' '")
+def get_all_volume_sinks():
+    
     global sound_card_index_PC
     global sound_card_index_HDMI
+    global sound_card_index_BLUETOOTH
     global sound_card_order_PC 
     global sound_card_order_HDMI
+    global sound_card_order_BLUETOOTH 
     
-    if(sink1_name == 'ALC892 Analog' and sink2_name == 'HDMI 0'):
-        sound_card_index_PC   = sink1_index
-        sound_card_index_HDMI = sink2_index
-        sound_card_order_PC   = "1"
-        sound_card_order_HDMI = "2"
-    elif(sink1_name == 'HDMI 0' and sink2_name == 'ALC892 Analog'):
-        sound_card_index_PC   = sink2_index
-        sound_card_index_HDMI = sink1_index
-        sound_card_order_PC   = "2"
-        sound_card_order_HDMI = "1"
-    else:
-        logger.warning("ERROR: Check get_index_volume() - Values: \n - sink1_name: " + sink1_name + "\n - sink2_name: " + sink2_name + "\n - sink1_index: " + sink1_index  + "\n - sink2_index: " + sink2_index)
+    
+    all_sink         = subprocess.getoutput("pacmd list-sinks | grep 'name: <' | cut -f 2 -d ':'").split('\n')
+    # all_sink output example:
+    # <alsa_output.pci-0000_00_1b.0.analog-stereo>
+    # <alsa_output.pci-0000_00_03.0.hdmi-stereo>
+    # <bluez_sink.60_AB_D2_76_99_38.a2dp_sink>
+    
+    all_sink_indexes = subprocess.getoutput("pacmd list-sinks | grep 'index' | cut -f 2 -d ':' | cut -f 2 -d ' '").split('\n')
+    # all_sink_indexes output example:
+    # 1
+    # 2
+    # 6
 
-def get_current_volume_ALC892Analog():
-    get_index_volume()
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + sound_card_order_PC + "{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + sound_card_order_PC + "{print $2}'")
+    for index,sink in enumerate(all_sink):
+        if "analog-stereo" in sink:
+            #logger.warning("analog-stereo - index PC: " + all_sink_indexes[index] + " / order PC: " + str(index))
+            sound_card_index_PC = all_sink_indexes[index]
+            sound_card_order_PC = index
+        elif "hdmi-stereo" in sink:
+            #logger.warning("hdmi-stereo - index HDMI: " + all_sink_indexes[index] + " / order HDMI: " + str(index))
+            sound_card_index_HDMI = all_sink_indexes[index]
+            sound_card_order_HDMI = index
+        elif "bluez_sink" in sink:
+            #logger.warning("bluez_sink - index BLUETOOTH: " + all_sink_indexes[index] + " / order BLUETOOTH: " + str(index))
+            sound_card_index_BLUETOOTH = all_sink_indexes[index]
+            sound_card_order_BLUETOOTH = index
+        else:
+            logger.warning("ERROR: Check get_all_volume_sinks() - Values: \n - sink: " + sink + "\n - order_index: " + str(index) + "\n - sink_index: " + all_sink_indexes[index])
+
+
+
+def get_current_volume(sink_order):
+    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
+    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
     if(volume == ""):
         return "N/A"
     else:
         if(muted == "yes"):
-            return "M"
+            # return "M"
+            return "ﱝ" # nf-mdi-volume_mute
         else:
-            return volume + "%"
+            #return volume + "%"
+            if(int(volume) < 30):
+                return "奄" # nf-mdi-volume_low
+            elif (int(volume) >= 30 and int(volume) < 70):
+                return "奔" # nf-mdi-volume_medium
+            else:
+                return "墳" # nf-mdi-volume_high
     
-def get_current_volume_HDMI0():        
-    get_index_volume()
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + sound_card_order_HDMI + "{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + sound_card_order_HDMI + "{print $2}'")
-    if(volume == ""):
-        return "N/A"
+def get_current_volume_PC():
+    get_all_volume_sinks()
+    return get_current_volume(sound_card_order_PC)
+def get_current_volume_HDMI():
+    get_all_volume_sinks()
+    return get_current_volume(sound_card_order_HDMI)
+def get_current_volume_BLUETOOTH():
+    get_all_volume_sinks()
+    #return get_current_volume(sound_card_order_BLUETOOTH)
+    blutooth_volume = get_current_volume(sound_card_order_BLUETOOTH)
+    if(blutooth_volume == "N/A"):
+        return "ﳌ" # Nerd fonts: nf-mdi-headphones_off
     else:
-        if(muted == "yes"):
-            return "M"
-        else:
-            return volume + "%"
-    
+        return "" # Nerd fonts: nf-mdi-headphones
+
+
 # Not used
 #def get_keycode():
 #    keycode = subprocess.getoutput("xmodmap -pke | grep KP_1 | awk '{print $2}'")
 #    return keycode
-get_index_volume()
+get_all_volume_sinks()
 keys = [
     # Main key bindings
     Key([mod], "k", lazy.layout.down()),
@@ -313,7 +344,7 @@ def init_widgets_list():
             margin_x = 5
         ),
         widget.Net(
-            interface = "wlp5s0",
+            interface = network_interface,
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
         
@@ -364,11 +395,13 @@ def init_widgets_list():
             margin = 6,
             margin_x = 5
         ),
-        widget.BitcoinTicker(
-            foreground = "#f7931a",
-            currency="EUR"
-        ),
 
+        widget.GenPollText(
+            func=btc_ticker,
+            update_interval=30,
+            foreground = "#f7931a"
+        ),
+        
         # Monero ticker
         widget.Image(
             filename = "~/.config/qtile/icons/monero.png",
@@ -381,14 +414,6 @@ def init_widgets_list():
             foreground = "#fc6a03"
         ),
 
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
-        widget.CurrentLayoutIcon(
-            custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
-            background = colors["black_grey"],
-            padding = 0,
-            scale = 0.5
-        ),
         #widget.CurrentLayout(**widget_defaults),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
@@ -408,32 +433,31 @@ def init_widgets_list():
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
         # Volume
-        widget.Image(
-            filename = "~/.config/qtile/icons/volume.png",
-            margin = 6,
-            margin_x = 5
-        ),
         widget.GenPollText(
-            func=get_current_volume_ALC892Analog,
-            update_interval=0.1
+            func=get_current_volume_PC,
+            update_interval=0.1,
+            fontsize=23
         ), 
-        widget.Image(
-            filename = "~/.config/qtile/icons/volume.png",
-            margin = 6,
-            margin_x = 5
-        ),
+        widget.Sep(padding = 5, linewidth=0),
         widget.GenPollText(
-            func=get_current_volume_HDMI0,
-            update_interval=0.1
+            func=get_current_volume_HDMI,
+            update_interval=0.1,
+            fontsize=23
+        ),
+        widget.Sep(padding = 5, linewidth=0),
+        widget.GenPollText(
+            func=get_current_volume_BLUETOOTH,
+            update_interval=0.1,
+            fontsize=20
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
-        widget.Image(
-            filename = "~/.config/qtile/icons/keyboard.png",
-            margin = 7,
-            margin_x = 5
-        ),
+        # widget.Image(
+        #     filename = "~/.config/qtile/icons/keyboard.png",
+        #     margin = 7,
+        #     margin_x = 5
+        # ),
         
         widget.GenPollText(
             func=get_kb_layout,
@@ -443,6 +467,15 @@ def init_widgets_list():
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         #widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
         widget.Clock(format='%d/%m/%Y - %H:%M:%S'), # %S for adding seconds
+        
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+        widget.CurrentLayoutIcon(
+            custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
+            background = colors["black_grey"],
+            padding = 0,
+            scale = 0.5
+        ),
     ]
     return widgets_list
 

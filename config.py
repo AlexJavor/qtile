@@ -132,24 +132,24 @@ def get_all_volume_sinks():
 
 def get_current_volume(sink_order):
     if(sink_order == 'TBD'):
-        return "婢"
+        return "N/A"
     else:
         volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
         muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
         if(volume == ""):
-            return "婢"
+            return "N/A"
         else:
             if(muted == "yes"):
                 # return "M"
-                return "ﱝ" # nf-mdi-volume_mute
+                return "M" # nf-mdi-volume_mute
             else:
                 #return volume + "%"
                 if(int(volume) < 30):
-                    return "奄" # nf-mdi-volume_low
+                    return volume + "%" # nf-mdi-volume_low
                 elif (int(volume) >= 30 and int(volume) < 70):
-                    return "奔" # nf-mdi-volume_medium
+                    return volume + "%" # nf-mdi-volume_medium
                 else:
-                    return "墳" # nf-mdi-volume_high
+                   return volume + "%" # nf-mdi-volume_high
     
 def get_current_volume_PC():
     get_all_volume_sinks()
@@ -343,7 +343,7 @@ def init_widgets_list():
         
         widget.Image(
             filename = "~/.config/qtile/icons/rj45.png",
-            margin = 3,
+            margin = 4,
             margin_x = 5
         ),
         widget.Net(
@@ -352,32 +352,32 @@ def init_widgets_list():
         ),
         
         widget.Sep(linewidth = 0, padding = 3),
-        widget.Image(
-            filename = "~/.config/qtile/icons/processor.png",
-            margin = 5,
-            margin_x = 5
-        ),
-        widget.CPU(
-            format = '{load_percent}%'
-        ),
+        #widget.Image(
+        #    filename = "~/.config/qtile/icons/processor.png",
+        #    margin = 5,
+        #    margin_x = 5
+        #),
+        #widget.CPU(
+        #    format = '{load_percent}%'
+        #),
 
-        widget.Sep(linewidth = 0, padding = 3),
-        widget.Image(
-            filename = "~/.config/qtile/icons/ram.png",
-            margin = 3,
-            margin_x = 5
-        ),
-        widget.Memory(
-                foreground = colors["white"],
-                background = colors["black_grey"],
-                padding = 5,
-                format = '{MemPercent}%'
-        ),
+        #widget.Sep(linewidth = 0, padding = 3),
+        #widget.Image(
+        #    filename = "~/.config/qtile/icons/ram.png",
+        #    margin = 3,
+        #    margin_x = 5
+        #),
+        #widget.Memory(
+        #        foreground = colors["white"],
+        #        background = colors["black_grey"],
+        #        padding = 5,
+        #        format = '{MemPercent}%'
+        #),
 
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/floppy-disk.png",
-            margin = 6,
+            margin = 8,
             margin_x = 5
         ),
         widget.DF(
@@ -393,22 +393,21 @@ def init_widgets_list():
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         # Bitcoin ticker
-        widget.Image(
-            filename = "~/.config/qtile/icons/bitcoin.png",
-            margin = 6,
-            margin_x = 5
-        ),
-
-        widget.GenPollText(
-            func=btc_ticker,
-            update_interval=30,
-            foreground = "#f7931a"
-        ),
+        # widget.Image(
+        #     filename = "~/.config/qtile/icons/bitcoin.png",
+        #     margin = 7,
+        #     margin_x = 5
+        # ),
+        #widget.GenPollText(
+        #    func=btc_ticker,
+        #    update_interval=30,
+        #    foreground = "#f7931a"
+        #),
         
         # Monero ticker
         widget.Image(
             filename = "~/.config/qtile/icons/monero.png",
-            margin = 6,
+            margin = 7,
             margin_x = 5
         ),
         widget.GenPollText(
@@ -435,23 +434,33 @@ def init_widgets_list():
         
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
-        # Volume
+        # Volume      
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 7,
+            margin_x = 5
+        ),
         widget.GenPollText(
             func=get_current_volume_PC,
             update_interval=0.1,
-            fontsize=23
+            #fontsize=13
         ), 
         widget.Sep(padding = 5, linewidth=0),
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 7,
+            margin_x = 5
+        ),
         widget.GenPollText(
             func=get_current_volume_HDMI,
             update_interval=0.1,
-            fontsize=23
+            #fontsize=13
         ),
         widget.Sep(padding = 5, linewidth=0),
         widget.GenPollText(
             func=get_current_volume_BLUETOOTH,
             update_interval=0.1,
-            fontsize=20
+            fontsize=19
         ),
 
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),

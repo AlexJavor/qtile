@@ -18,27 +18,57 @@
 # ************** Arch default libqtile path ******** #
 # /usr/lib/python3.9/site-packages/libqtile/
 
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                                       IMPORTS                                         |
+#|_______________________________________________________________________________________|
+
 import os
 import subprocess
 import platform
+import time
 import socket
-from libqtile.config import Key, Screen, Group, Drag, Click
+from urllib.request import urlopen
+from libqtile.config import Key, Screen, Group, Drag, Click, Match
 from libqtile.command import lazy
 from libqtile import layout, bar, widget, hook
 from libqtile.log_utils import logger
-import os
-import subprocess
+
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                              STARTUP HOOK (AUTOSTART)                                 |
+#|_______________________________________________________________________________________|
 
 @hook.subscribe.startup
 def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call([home])
 
-# *************** Global Variables ***************** #
-my_terminal= "terminator"
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                                  GLOBAL VARIABLES                                     |
+#|_______________________________________________________________________________________|
+
 alt = "mod1"
 mod = "mod4"
+
+my_terminal= "terminator"
+
 network_interface="wlp5s0"
+
+main_screen = 'eDP-1'
+hdmi_screen = 'HDMI-1'
+displayport_screen = 'DP-1'
+
+max_percentage_volume = '100' # Maximum Percentage: 150%
+
+group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
+group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
+group_numbers_current = group_numbers_kp
 
 colors = {
     "black_grey" : "#282A36",   # panel_bg
@@ -58,40 +88,54 @@ sound_card_order_PC        = 'TBD'
 sound_card_order_HDMI      = 'TBD'
 sound_card_order_BLUETOOTH = 'TBD'
 
-main_screen = 'eDP-1'
-hdmi_screen = 'HDMI-1'
-displayport_screen = 'DP-1'
 
-max_percentage_volume = '100' # Maximum Percentage: 150%
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                    SITE FUNCTIONS                                     |
+#|_______________________________________________________________________________________|
 
-group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
-group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
-group_numbers_current = group_numbers_kp
-# **************************************************** #
-
-#***** Crypto tickers ***** #
-def crypto_ticker(unit):
-    price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
-    price_split = price.split(".")
-    price_shown = price_split[0] + "." + price_split[1][:2]
-    return price_shown + "€"
-
-def xmr_ticker(): return crypto_ticker("xmr") 
-def btc_ticker(): return crypto_ticker("btc") 
-#****************************#
+# -----------------------------------------------------------
+# -- VPN AND INTERNET CHECKERS 
+# -----------------------------------------------------------
+def internet_on():
+    try:
+        response = urlopen('https://eur.rate.sx/', timeout=10)
+        return True
+    except: 
+        return False
 
 def get_current_country():
     public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
     country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
     return country.upper()
 
+# -----------------------------------------------------------
+# -- CRYPTOCURRENCY TICKERS 
+# -----------------------------------------------------------
+def crypto_ticker(unit):
+    internet = internet_on()
+    if(internet):
+        price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
+        price_split = price.split(".")
+        price_shown = price_split[0] + "." + price_split[1][:2]
+        return price_shown + "€"
+    else:
+        return "N/A"
+
+def xmr_ticker(): return crypto_ticker("xmr") 
+def btc_ticker(): return crypto_ticker("btc") 
+
+# -----------------------------------------------------------
+# -- CURRENT KEYBOARD LAYOUT 
+# -----------------------------------------------------------
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
     return kb_layout.upper()
 
+# -----------------------------------------------------------
+# -- VOLUME AND SINK MANAGEMENT 
+# -----------------------------------------------------------
 def get_all_volume_sinks():
-    
     global sound_card_index_PC
     global sound_card_index_HDMI
     global sound_card_index_BLUETOOTH
@@ -99,36 +143,37 @@ def get_all_volume_sinks():
     global sound_card_order_HDMI
     global sound_card_order_BLUETOOTH 
     
-    
-    all_sink         = subprocess.getoutput("pacmd list-sinks | grep 'name: <' | cut -f 2 -d ':'").split('\n')
-    # all_sink output example:
-    # <alsa_output.pci-0000_00_1b.0.analog-stereo>
-    # <alsa_output.pci-0000_00_03.0.hdmi-stereo>
-    # <bluez_sink.60_AB_D2_76_99_38.a2dp_sink>
-    
     all_sink_indexes = subprocess.getoutput("pacmd list-sinks | grep 'index' | cut -f 2 -d ':' | cut -f 2 -d ' '").split('\n')
     # all_sink_indexes output example:
     # 1
     # 2
     # 6
+    
+    all_sink = subprocess.getoutput("pacmd list-sinks | grep 'name: <' | cut -f 2 -d ':'").split('\n')
+    # all_sink output example:
+    # <alsa_output.pci-0000_00_1b.0.analog-stereo>
+    # <alsa_output.pci-0000_00_03.0.hdmi-stereo>
+    # <bluez_sink.60_AB_D2_76_99_38.a2dp_sink>
 
-    for index,sink in enumerate(all_sink):
-        if "analog-stereo" in sink:
-            #logger.warning("analog-stereo - index PC: " + all_sink_indexes[index] + " / order PC: " + str(index))
-            sound_card_index_PC = all_sink_indexes[index]
-            sound_card_order_PC = index
-        elif "hdmi-stereo" in sink:
-            #logger.warning("hdmi-stereo - index HDMI: " + all_sink_indexes[index] + " / order HDMI: " + str(index))
-            sound_card_index_HDMI = all_sink_indexes[index]
-            sound_card_order_HDMI = index
-        elif "bluez_sink" in sink:
-            #logger.warning("bluez_sink - index BLUETOOTH: " + all_sink_indexes[index] + " / order BLUETOOTH: " + str(index))
-            sound_card_index_BLUETOOTH = all_sink_indexes[index]
-            sound_card_order_BLUETOOTH = index
-        else:
-            logger.warning("ERROR: Check get_all_volume_sinks() - Values: \n - sink: " + sink + "\n - order_index: " + str(index) + "\n - sink_index: " + all_sink_indexes[index])
-
-
+    if(len(all_sink) != len(all_sink_indexes)):
+        logger.warning("ERROR: Check get_all_volume_sinks() - Arrays all_sink and all_sink_indexes have a different size")
+        return None
+    else:
+        for index,sink in enumerate(all_sink):
+            if "analog-stereo" in sink:
+                #logger.warning("analog-stereo - index PC: " + all_sink_indexes[index] + " / order PC: " + str(index))
+                sound_card_index_PC = all_sink_indexes[index]
+                sound_card_order_PC = index
+            elif "hdmi-stereo" in sink:
+                #logger.warning("hdmi-stereo - index HDMI: " + all_sink_indexes[index] + " / order HDMI: " + str(index))
+                sound_card_index_HDMI = all_sink_indexes[index]
+                sound_card_order_HDMI = index
+            elif "bluez_sink" in sink:
+                #logger.warning("bluez_sink - index BLUETOOTH: " + all_sink_indexes[index] + " / order BLUETOOTH: " + str(index))
+                sound_card_index_BLUETOOTH = all_sink_indexes[index]
+                sound_card_order_BLUETOOTH = index
+            else:
+                logger.warning("ERROR: Check get_all_volume_sinks() - Values: \n - sink: " + sink + "\n - order_index: " + str(index) + "\n - sink_index: " + all_sink_indexes[index])
 
 def get_current_volume(sink_order):
     if(sink_order == 'TBD'):
@@ -143,13 +188,7 @@ def get_current_volume(sink_order):
                 # return "M"
                 return "M" # nf-mdi-volume_mute
             else:
-                #return volume + "%"
-                if(int(volume) < 30):
-                    return volume + "%" # nf-mdi-volume_low
-                elif (int(volume) >= 30 and int(volume) < 70):
-                    return volume + "%" # nf-mdi-volume_medium
-                else:
-                   return volume + "%" # nf-mdi-volume_high
+                return volume + "%"
     
 def get_current_volume_PC():
     get_all_volume_sinks()
@@ -161,17 +200,17 @@ def get_current_volume_BLUETOOTH():
     get_all_volume_sinks()
     #return get_current_volume(sound_card_order_BLUETOOTH)
     blutooth_volume = get_current_volume(sound_card_order_BLUETOOTH)
-    if(blutooth_volume == "婢"):
+    if(blutooth_volume == "N/A"):
         return "ﳌ" # Nerd fonts: nf-mdi-headphones_off
     else:
         return "" # Nerd fonts: nf-mdi-headphones
 
-
-# Not used
-#def get_keycode():
-#    keycode = subprocess.getoutput("xmodmap -pke | grep KP_1 | awk '{print $2}'")
-#    return keycode
 get_all_volume_sinks()
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                       KEY BINDINGS                                    |
+#|_______________________________________________________________________________________|
 keys = [
     # Main key bindings
     Key([mod], "k", lazy.layout.down()),
@@ -215,7 +254,11 @@ keys = [
     # Open Firefox
     Key([mod], "f", lazy.spawn("firefox")),
     # Open Tor Browser
-    Key([mod], "t", lazy.spawn("torbrowser-launcher")),
+    # Key([mod], "t", lazy.spawn("torbrowser-launcher")), 
+    # Open Thunderbird
+    Key([mod], "t", lazy.spawn("thunderbird")),
+    # Open VirtualBox 
+    Key([mod], "v", lazy.spawn("virtualbox")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
     # Open Session
@@ -254,12 +297,16 @@ keys = [
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                       WORKSPACES                                      |
+#|_______________________________________________________________________________________|
 group_names = [("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'max'}),
+               ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'floating'})]
@@ -271,7 +318,10 @@ for i, (name, kwargs) in enumerate(group_names, 0):
     keys.append(Key([mod], keypad_indx, lazy.group[name].toscreen()))
     keys.append(Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name)))
         
-
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                        LAYOUTS                                        |
+#|_______________________________________________________________________________________|
 layout_theme = {
     "border_width": 2,
     "margin": 20,
@@ -285,6 +335,20 @@ layouts = [
     layout.Floating(**layout_theme)
 ]
 
+# Drag floating layouts.
+mouse = [
+    Drag([mod], "Button1", lazy.window.set_position_floating(),
+        start=lazy.window.get_position()),
+    Drag([mod], "Button3", lazy.window.set_size_floating(),
+        start=lazy.window.get_size()),
+    Click([mod], "Button2", lazy.window.bring_to_front())
+]
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                  BAR CONFIGURATION                                    |
+#|_______________________________________________________________________________________|
+
 widget_defaults = dict(
     font='Fira Code Nerd Font',
     #font='Caskaydia Cove Nerd Font',
@@ -296,19 +360,23 @@ widget_defaults = dict(
 
 def init_widgets_list():
     widgets_list = [
-
+        # -----------------------------------------------------------
+        # -- LOGO IMAGE (TROPTIMUM) 
+        # -----------------------------------------------------------
         widget.Image(
             filename = "~/.config/qtile/icons/trioptimum-logo.png",
             margin = 2,
             margin_x = 5
         ),
-
         widget.Sep(
             linewidth = 0,
             padding = 5,
             foreground = colors["white"],
             background = colors["black_grey"]
         ),
+        # -----------------------------------------------------------
+        # -- WORKSPACES 
+        # -----------------------------------------------------------
         widget.GroupBox(
             fontsize = 28,
             font="FontAwesome",
@@ -330,17 +398,22 @@ def init_widgets_list():
             background = colors["black_grey"]
         ),
 
+        # -----------------------------------------------------------
+        # -- PROMPT AND CURRENT WINDOW NAME 
+        # -----------------------------------------------------------
         widget.Prompt(
             prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
             padding = 10,
             foreground = colors["light_red"],
             background = colors["dark_grey"]
         ),
-
         widget.WindowName(
             foreground = colors["purple"]
         ),
         
+        # -----------------------------------------------------------
+        # -- SYSTEM MONITORING (NETWORK, HARD DRIVE, CPU & RAM) 
+        # -----------------------------------------------------------
         widget.Image(
             filename = "~/.config/qtile/icons/rj45.png",
             margin = 4,
@@ -350,7 +423,6 @@ def init_widgets_list():
             interface = network_interface,
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         ),
-        
         widget.Sep(linewidth = 0, padding = 3),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/processor.png",
@@ -360,7 +432,6 @@ def init_widgets_list():
         #widget.CPU(
         #    format = '{load_percent}%'
         #),
-
         #widget.Sep(linewidth = 0, padding = 3),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/ram.png",
@@ -373,7 +444,6 @@ def init_widgets_list():
         #        padding = 5,
         #        format = '{MemPercent}%'
         #),
-
         widget.Sep(linewidth = 0, padding = 3),
         widget.Image(
             filename = "~/.config/qtile/icons/floppy-disk.png",
@@ -389,9 +459,12 @@ def init_widgets_list():
                 visible_on_warn = False,
                 warn_space = 10
         ),
-
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
+        # -----------------------------------------------------------
+        # -- CRYPTO TICKERS
+        # -----------------------------------------------------------
+        
         # Bitcoin ticker
         # widget.Image(
         #     filename = "~/.config/qtile/icons/bitcoin.png",
@@ -415,26 +488,27 @@ def init_widgets_list():
             update_interval=30,
             foreground = "#fc6a03"
         ),
-
-        #widget.CurrentLayout(**widget_defaults),
-
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
+        # -----------------------------------------------------------
+        # -- BATTERY
+        # -----------------------------------------------------------
         widget.Image(
             filename = "~/.config/qtile/icons/battery.png",
             margin = 5,
             margin_x = 5
         ),
-       # widget.BatteryIcon(
-       #     battery=0
-       # ),
         widget.Battery(
             format = '{percent:2.0%}'
         ),
-        
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         
-        # Volume      
+
+        # -----------------------------------------------------------
+        # -- VOLUME 
+        # -----------------------------------------------------------
+        
+        # Volume PC      
         widget.Image(
             filename = "~/.config/qtile/icons/volume.png",
             margin = 7,
@@ -446,6 +520,8 @@ def init_widgets_list():
             #fontsize=13
         ), 
         widget.Sep(padding = 5, linewidth=0),
+        
+        # Volume HDMI
         widget.Image(
             filename = "~/.config/qtile/icons/volume.png",
             margin = 7,
@@ -457,31 +533,42 @@ def init_widgets_list():
             #fontsize=13
         ),
         widget.Sep(padding = 5, linewidth=0),
+
+        # Bluetooth headphones state
         widget.GenPollText(
             func=get_current_volume_BLUETOOTH,
             update_interval=0.1,
             fontsize=19
         ),
-
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        
+
+        # -----------------------------------------------------------
+        # -- KEYBOARD LAYOUT
+        # -----------------------------------------------------------
         
         # widget.Image(
         #     filename = "~/.config/qtile/icons/keyboard.png",
         #     margin = 7,
         #     margin_x = 5
-        # ),
-        
+        # ), 
         widget.GenPollText(
             func=get_kb_layout,
             update_interval=0.5,
         ),
-
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+
+        # -----------------------------------------------------------
+        # -- DATE AND TIME  
+        # -----------------------------------------------------------
         #widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
         widget.Clock(format='%d/%m/%Y - %H:%M:%S'), # %S for adding seconds
-        
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
+        # -----------------------------------------------------------
+        # -- CURRENT LAYOUT 
+        # -----------------------------------------------------------
         widget.CurrentLayoutIcon(
             custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
             background = colors["black_grey"],
@@ -491,6 +578,11 @@ def init_widgets_list():
     ]
     return widgets_list
 
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                  SCREEN CONFIGURATIONS                                |
+#|_______________________________________________________________________________________|
 
 def init_widgets_screen1():
     widgets_screen1 = init_widgets_list() # Slicing removes unwanted widgets on Monitors 1,3
@@ -521,20 +613,10 @@ def init_screens():
             Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
             Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
 
-
-if __name__ in ["config", "__main__"]:
-    screens = init_screens()
-
-
-# Drag floating layouts.
-mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(),
-        start=lazy.window.get_position()),
-    Drag([mod], "Button3", lazy.window.set_size_floating(),
-        start=lazy.window.get_size()),
-    Click([mod], "Button2", lazy.window.bring_to_front())
-]
-
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                     OTHER OPTIONS                                     |
+#|_______________________________________________________________________________________|
 dgroups_key_binder = None
 dgroups_app_rules = []
 main = None
@@ -572,3 +654,11 @@ extentions = []
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
 wmname = "LG3D"
+
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                          MAIN                                         |
+#|_______________________________________________________________________________________|
+if __name__ in ["config", "__main__"]:
+    screens = init_screens()

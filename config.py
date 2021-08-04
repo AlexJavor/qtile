@@ -97,23 +97,39 @@ sound_card_order_BLUETOOTH = 'TBD'
 # -----------------------------------------------------------
 # -- VPN AND INTERNET CHECKERS 
 # -----------------------------------------------------------
-def internet_on():
+def internet_on(url):
     try:
-        response = urlopen('https://eur.rate.sx/', timeout=10)
+        response = urlopen(url, timeout=10)
         return True
     except: 
         return False
 
 def get_current_country():
-    public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
-    country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
-    return country.upper()
+    internet = internet_on('https://archlinux.org/')
+    if(internet):
+        public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
+        country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
+        return country.upper()
+    else:
+        return "N/A"
+
+def check_vpn_status():
+    internet = internet_on('https://archlinux.org/')
+    if (not internet):
+        return "睊  嬨 "
+    else: 
+        openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
+        #logger.warning("OpenVPN_PID: " + openvpn_pid)
+        if (openvpn_pid == ""):
+            return "直  嬨 "
+        else:
+            return "直  嬨 "
 
 # -----------------------------------------------------------
 # -- CRYPTOCURRENCY TICKERS 
 # -----------------------------------------------------------
 def crypto_ticker(unit):
-    internet = internet_on()
+    internet = internet_on('https://eur.rate.sx/')
     if(internet):
         price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
         price_split = price.split(".")
@@ -414,11 +430,22 @@ def init_widgets_list():
         # -----------------------------------------------------------
         # -- SYSTEM MONITORING (NETWORK, HARD DRIVE, CPU & RAM) 
         # -----------------------------------------------------------
-        widget.Image(
-            filename = "~/.config/qtile/icons/rj45.png",
-            margin = 4,
-            margin_x = 5
+        widget.GenPollText(
+            func=check_vpn_status,
+            update_interval=0.5,
+            fontsize=18
+            #foreground = "#fc6a03"
         ),
+        widget.GenPollText(
+            func=get_current_country,
+            update_interval=0.5
+            #foreground = "#fc6a03"
+        ),
+        #widget.Image(
+        #    filename = "~/.config/qtile/icons/rj45.png",
+        #    margin = 4,
+        #    margin_x = 5
+        #),
         widget.Net(
             interface = network_interface,
             format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'

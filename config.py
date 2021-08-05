@@ -55,7 +55,9 @@ def autostart():
 alt = "mod1"
 mod = "mod4"
 
-my_terminal= "terminator"
+my_terminal = "terminator"
+my_browser = "firefox"
+my_mailclient = "thunderbird" 
 
 network_interface="wlp5s0"
 
@@ -144,6 +146,7 @@ def crypto_ticker(unit):
 
 def xmr_ticker(): return crypto_ticker("xmr") 
 def btc_ticker(): return crypto_ticker("btc") 
+def hnt_ticker(): return crypto_ticker("hnt") 
 
 # -----------------------------------------------------------
 # -- CURRENT KEYBOARD LAYOUT 
@@ -271,14 +274,25 @@ keys = [
     Key(["shift", alt], "e", lazy.spawn("setxkbmap es")),
     Key(["shift", alt], "f", lazy.spawn("setxkbmap fr")),
 
+
+    # Open VPN activation / deactivation 
+    # Create or add sudoers.d/custom_sudoers and add some exceptions:
+    # $ sudo visudo -f /etc/sudoers.d/custom_sudoers
+    # ALL ALL=NOPASSWD: /bin/systemctl start vpnd_bordeaux.service
+    # ALL ALL=NOPASSWD: /bin/systemctl stop vpnd_bordeaux.service
+    # ALL ALL=NOPASSWD: /usr/bin/pkill openvpn
+
+    Key([mod], "v", lazy.spawn("sudo systemctl start vpnd_bordeaux.service")),
+    Key([mod, "control"], "v", lazy.spawn("sudo pkill openvpn")),
+
     # Open Firefox
-    Key([mod], "f", lazy.spawn("firefox")),
+    Key([mod], "f", lazy.spawn(my_browser)),
     # Open Tor Browser
-    # Key([mod], "t", lazy.spawn("torbrowser-launcher")), 
-    # Open Thunderbird
-    Key([mod], "t", lazy.spawn("thunderbird")),
+    Key([mod], "t", lazy.spawn("torbrowser-launcher")), 
+    # Open Mail Client Thunderbird
+    Key([mod], "m", lazy.spawn(my_mailclient)),
     # Open VirtualBox 
-    Key([mod], "v", lazy.spawn("virtualbox")),
+    #Key([mod], "v", lazy.spawn("virtualbox")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
     # Open Session
@@ -457,11 +471,11 @@ def init_widgets_list():
         #    margin = 4,
         #    margin_x = 5
         #),
-        widget.Net(
-            interface = network_interface,
-            format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
-        ),
-        widget.Sep(linewidth = 0, padding = 3),
+        #widget.Net(
+        #    interface = network_interface,
+        #    format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
+        #),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/processor.png",
         #    margin = 5,
@@ -526,6 +540,17 @@ def init_widgets_list():
             update_interval=30,
             foreground = "#fc6a03"
         ),
+        # Helium ticker
+        widget.Image(
+            filename = "~/.config/qtile/icons/helium.png",
+            margin = 6,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=hnt_ticker,
+            update_interval=30,
+            foreground = "#38a2ff"
+        ),
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         # -----------------------------------------------------------
@@ -533,7 +558,7 @@ def init_widgets_list():
         # -----------------------------------------------------------
         widget.Image(
             filename = "~/.config/qtile/icons/battery.png",
-            margin = 5,
+            margin = 6,
             margin_x = 5
         ),
         widget.Battery(

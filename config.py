@@ -113,17 +113,21 @@ def get_current_country():
     else:
         return "N/A"
 
+def print_internet_status():
+    internet = internet_on('https://archlinux.org/')
+    if (internet):
+        return "直"
+    else:
+        return "睊"
+
 def check_vpn_status():
     internet = internet_on('https://archlinux.org/')
-    if (not internet):
-        return "睊  嬨 "
+    openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
+    #logger.warning("OpenVPN_PID: " + openvpn_pid)
+    if (not internet or openvpn_pid == ""):
+        return "嬨 "
     else: 
-        openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
-        #logger.warning("OpenVPN_PID: " + openvpn_pid)
-        if (openvpn_pid == ""):
-            return "直  嬨 "
-        else:
-            return "直  嬨 "
+        return "嬨 "
 
 # -----------------------------------------------------------
 # -- CRYPTOCURRENCY TICKERS 
@@ -428,12 +432,19 @@ def init_widgets_list():
         ),
         
         # -----------------------------------------------------------
-        # -- SYSTEM MONITORING (NETWORK, HARD DRIVE, CPU & RAM) 
+        # -- SYSTEM MONITORING (VPN & NETWORK, HARD DRIVE, CPU & RAM) 
         # -----------------------------------------------------------
+        widget.GenPollText(
+            func=print_internet_status,
+            update_interval=0.5,
+            fontsize=17,
+            padding=10
+            #foreground = "#fc6a03"
+        ),
         widget.GenPollText(
             func=check_vpn_status,
             update_interval=0.5,
-            fontsize=18
+            fontsize=17
             #foreground = "#fc6a03"
         ),
         widget.GenPollText(

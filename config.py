@@ -26,6 +26,7 @@
 
 import os
 import subprocess
+import requests
 import platform
 import time
 import socket
@@ -59,18 +60,23 @@ my_terminal = "terminator"
 my_browser = "firefox"
 my_mailclient = "thunderbird" 
 
+headphones_macaddress = "60:AB:D2:76:99:38"
+
 network_interface="wlp5s0"
 
-main_screen = 'eDP-1'
+# TODO : Change to main and then left and reigt screen. Include configuration of the size here
+main_screen = 'LVDS-1'
 hdmi_screen = 'HDMI-1'
-displayport_screen = 'DP-1'
+displayport_screen = 'VGA-1'
+
+ticker_refreshrate = 30 #Crypto ticker refresh rate in seconds
 
 max_percentage_volume = '100' # Maximum Percentage: 150%
 
 group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
 group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
-group_numbers_current = group_numbers_kp
+group_numbers_current = group_numbers_fr
 
 colors = {
     "black_grey" : "#282A36",   # panel_bg
@@ -80,7 +86,8 @@ colors = {
     "black"      : "#000000",   # other_screen_tabs_bg
     "purple"     : "#A77AC4",   # other_screen_tabs
     "french_blue": "#0055a4",
-    "french_red" : "#ef4135"
+    "french_red" : "#ef4135",
+    "green"      : "#00ff00"
 }
 
 sound_card_index_PC        = 'TBD'
@@ -118,29 +125,29 @@ def get_current_country():
 def print_internet_status():
     internet = internet_on('https://archlinux.org/')
     if (internet):
-        return "直"
+        return '<span foreground="' + colors["green"] + '">直</span>'
     else:
-        return "睊"
+        return '<span foreground="' + colors["french_red"] + '">睊</span>'
 
 def check_vpn_status():
     internet = internet_on('https://archlinux.org/')
     openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
     #logger.warning("OpenVPN_PID: " + openvpn_pid)
     if (not internet or openvpn_pid == ""):
-        return "嬨 "
+        return '<span foreground="' + colors["french_red"] + '">嬨</span>'
     else: 
-        return "嬨 "
+        return '<span foreground="' + colors["green"] + '">嬨</span>'
 
 # -----------------------------------------------------------
 # -- CRYPTOCURRENCY TICKERS 
 # -----------------------------------------------------------
 def crypto_ticker(unit):
-    internet = internet_on('https://eur.rate.sx/')
+    internet = internet_on('https://archlinux.org/')
     if(internet):
-        price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
-        price_split = price.split(".")
-        price_shown = price_split[0] + "." + price_split[1][:2]
-        return price_shown + "€"
+        price = requests.get("https://eur.rate.sx/1"+unit).content.decode("utf-8").split(".")
+        #price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
+        price_shown = price[0] + "." + price[1][:2] + "€"
+        return price_shown
     else:
         return "N/A"
 
@@ -269,6 +276,10 @@ keys = [
     Key([mod, alt], group_numbers_current[0], lazy.to_screen(0)),
     Key([mod, alt], group_numbers_current[1], lazy.to_screen(1)),
     Key([mod, alt], group_numbers_current[2], lazy.to_screen(2)),
+    
+    Key([mod, alt], group_numbers_kp[0], lazy.to_screen(0)),
+    Key([mod, alt], group_numbers_kp[1], lazy.to_screen(1)),
+    Key([mod, alt], group_numbers_kp[2], lazy.to_screen(2)),
 
     # Shift keyboard layout
     Key(["shift", alt], "e", lazy.spawn("setxkbmap es")),
@@ -290,7 +301,7 @@ keys = [
     # Open Tor Browser
     Key([mod], "t", lazy.spawn("torbrowser-launcher")), 
     # Open Mail Client Thunderbird
-    Key([mod], "m", lazy.spawn(my_mailclient)),
+    Key([mod, "control"], "m", lazy.spawn(my_mailclient)),
     # Open VirtualBox 
     #Key([mod], "v", lazy.spawn("virtualbox")),
     # Open Pavucontrol
@@ -299,9 +310,16 @@ keys = [
     Key([mod], "s", lazy.spawn("./SourceCode/Session/session-desktop-linux-x86_64-1.4.4.AppImage")),
     # Open config
     Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
+    # Open Bitwarden
+    Key([mod], "b", lazy.spawn("./SourceCode/Bitwarden.AppImage")),
+
+    # Enable / Disable bluetooth headphones
+    Key([mod], "h", lazy.spawn("bluetoothctl connect " + headphones_macaddress)),
+    Key([mod, "control"], "h", lazy.spawn("bluetoothctl power on")),
+    Key([mod, alt], "h", lazy.spawn("bluetoothctl power off")),
 
     # Reload Multiple Screens (2 Screens - Main + Left)
-    Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),
+    Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),   
     # Reload Multiple Screens (2 Screens - Main + Right)
     Key([mod, "shift"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1600x900  --right-of " + main_screen)),
     # Reload Multiple Screens (3 Screens)
@@ -343,14 +361,17 @@ group_names = [("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'floating'})]
+               ("",  {'layout': 'monadtall'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
 for i, (name, kwargs) in enumerate(group_names, 0):
-    keypad_indx = group_numbers_current[i]
+    keypad_indx = group_numbers_kp[i]
+    key_indx = group_numbers_current[i]
     keys.append(Key([mod], keypad_indx, lazy.group[name].toscreen()))
     keys.append(Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name)))
+    keys.append(Key([mod], key_indx, lazy.group[name].toscreen()))
+    keys.append(Key([mod, 'shift'], key_indx, lazy.window.togroup(name)))
         
 # _______________________________________________________________________________________
 #|                                                                                       |
@@ -461,11 +482,11 @@ def init_widgets_list():
             fontsize=17
             #foreground = "#fc6a03"
         ),
-        widget.GenPollText(
-            func=get_current_country,
-            update_interval=0.5
-            #foreground = "#fc6a03"
-        ),
+       # widget.GenPollText(
+       #     func=get_current_country,
+       #     update_interval=0.5
+       #     #foreground = "#fc6a03"
+       # ),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/rj45.png",
         #    margin = 4,
@@ -475,7 +496,7 @@ def init_widgets_list():
         #    interface = network_interface,
         #    format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         #),
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 1, padding = 20, foreground = colors["white"], background = colors["black_grey"]),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/processor.png",
         #    margin = 5,
@@ -537,7 +558,7 @@ def init_widgets_list():
         ),
         widget.GenPollText(
             func=xmr_ticker,
-            update_interval=30,
+            update_interval=ticker_refreshrate,
             foreground = "#fc6a03"
         ),
         # Helium ticker
@@ -548,7 +569,7 @@ def init_widgets_list():
         ),
         widget.GenPollText(
             func=hnt_ticker,
-            update_interval=30,
+            update_interval=ticker_refreshrate,
             foreground = "#38a2ff"
         ),
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
@@ -686,24 +707,26 @@ main = None
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating(float_rules=[
-    {'wmclass': 'confirm'},
-    {'wmclass': 'dialog'},
-    {'wmclass': 'download'},
-    {'wmclass': 'error'},
-    {'wmclass': 'file_progress'},
-    {'wmclass': 'notification'},
-    {'wmclass': 'splash'},
-    {'wmclass': 'toolbar'},
-    {'wmclass': 'confirmreset'},  # gitk
-    {'wmclass': 'makebranch'},  # gitk
-    {'wmclass': 'maketag'},  # gitk
-    {'wname': 'branchdialog'},  # gitk
-    {'wname': 'pinentry'},  # GPG key password entry
-    {'wmclass': 'ssh-askpass'},  # ssh-askpass
-    {"wmclass": "obs"},
-    {"wmclass": "notify"},
-])
+
+# floating_layout = layout.Floating(float_rules=[
+#     {'wmclass': 'confirm'},
+#     {'wmclass': 'dialog'},
+#     {'wmclass': 'download'},
+#     {'wmclass': 'error'},
+#     {'wmclass': 'file_progress'},
+#     {'wmclass': 'notification'},
+#     {'wmclass': 'splash'},
+#     {'wmclass': 'toolbar'},
+#     {'wmclass': 'confirmreset'},  # gitk
+#     {'wmclass': 'makebranch'},  # gitk
+#     {'wmclass': 'maketag'},  # gitk
+#     {'wname': 'branchdialog'},  # gitk
+#     {'wname': 'pinentry'},  # GPG key password entry
+#     {'wmclass': 'ssh-askpass'},  # ssh-askpass
+#     {"wmclass": "obs"},
+#     {"wmclass": "notify"},
+# ])
+
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 extentions = []

@@ -26,6 +26,7 @@
 
 import os
 import subprocess
+import requests
 import platform
 import time
 import socket
@@ -154,10 +155,10 @@ def check_vpn_status():
 def crypto_ticker(unit):
     internet = internet_on('https://archlinux.org/')
     if(internet):
-        price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
-        price_split = price.split(".")
-        price_shown = price_split[0] + "." + price_split[1][:2]
-        return price_shown + "€"
+        price = requests.get("https://eur.rate.sx/1"+unit).content.decode("utf-8").split(".")
+        #price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
+        price_shown = price[0] + "." + price[1][:2] + "€"
+        return price_shown
     else:
         return "N/A"
 
@@ -371,7 +372,7 @@ group_names = [("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
                ("",  {'layout': 'monadtall'}),
-               ("",  {'layout': 'floating'})]
+               ("",  {'layout': 'monadtall'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
@@ -506,7 +507,7 @@ def init_widgets_list():
         #    interface = default_network_interface,
         #    format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
         #),
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Sep(linewidth = 1, padding = 20, foreground = colors["white"], background = colors["black_grey"]),
         #widget.Image(
         #    filename = "~/.config/qtile/icons/processor.png",
         #    margin = 5,
@@ -561,28 +562,28 @@ def init_widgets_list():
         #),
         
         # Monero ticker
-       # widget.Image(
-       #     filename = "~/.config/qtile/icons/monero.png",
-       #     margin = 7,
-       #     margin_x = 5
-       # ),
-       # widget.GenPollText(
-       #     func=xmr_ticker,
-       #     update_interval=ticker_refreshrate,
-       #     foreground = "#fc6a03"
-       # ),
-       # # Helium ticker
-       # widget.Image(
-       #     filename = "~/.config/qtile/icons/helium.png",
-       #     margin = 6,
-       #     margin_x = 5
-       # ),
-       # widget.GenPollText(
-       #     func=hnt_ticker,
-       #     update_interval=ticker_refreshrate,
-       #     foreground = "#38a2ff"
-       # ),
-       # widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        widget.Image(
+            filename = "~/.config/qtile/icons/monero.png",
+            margin = 7,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=xmr_ticker,
+            update_interval=ticker_refreshrate,
+            foreground = "#fc6a03"
+        ),
+        # Helium ticker
+        widget.Image(
+            filename = "~/.config/qtile/icons/helium.png",
+            margin = 6,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=hnt_ticker,
+            update_interval=ticker_refreshrate,
+            foreground = "#38a2ff"
+        ),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         # -----------------------------------------------------------
         # -- BATTERY
@@ -718,24 +719,25 @@ follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
 
-#floating_layout = layout.Floating(float_rules=[
-#    {'wmclass': 'confirm'},
-#    {'wmclass': 'dialog'},
-#    {'wmclass': 'download'},
-#    {'wmclass': 'error'},
-#    {'wmclass': 'file_progress'},
-#    {'wmclass': 'notification'},
-#    {'wmclass': 'splash'},
-#    {'wmclass': 'toolbar'},
-#    {'wmclass': 'confirmreset'},  # gitk
-#    {'wmclass': 'makebranch'},  # gitk
-#    {'wmclass': 'maketag'},  # gitk
-#    {'wname': 'branchdialog'},  # gitk
-#    {'wname': 'pinentry'},  # GPG key password entry
-#    {'wmclass': 'ssh-askpass'},  # ssh-askpass
-#    {"wmclass": "obs"},
-#    {"wmclass": "notify"},
-#])
+# floating_layout = layout.Floating(float_rules=[
+#     {'wmclass': 'confirm'},
+#     {'wmclass': 'dialog'},
+#     {'wmclass': 'download'},
+#     {'wmclass': 'error'},
+#     {'wmclass': 'file_progress'},
+#     {'wmclass': 'notification'},
+#     {'wmclass': 'splash'},
+#     {'wmclass': 'toolbar'},
+#     {'wmclass': 'confirmreset'},  # gitk
+#     {'wmclass': 'makebranch'},  # gitk
+#     {'wmclass': 'maketag'},  # gitk
+#     {'wname': 'branchdialog'},  # gitk
+#     {'wname': 'pinentry'},  # GPG key password entry
+#     {'wmclass': 'ssh-askpass'},  # ssh-askpass
+#     {"wmclass": "obs"},
+#     {"wmclass": "notify"},
+# ])
+
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 extentions = []

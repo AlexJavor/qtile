@@ -76,10 +76,12 @@ main_screen_res  = os.getenv("MAIN_SCREEN_RES")
 right_screen_res = os.getenv("RIGHT_SCREEN_RES") 
 left_screen_res  = os.getenv("LEFT_SCREEN_RES")
 
-ticker_refreshrate = os.getenv("TICKER_REFRESH_RATE")
+ticker_refreshrate = int(os.getenv("TICKER_REFRESH_RATE"))
 
 max_percentage_volume = os.getenv("MAX_VOLUME") 
 
+active_crypto_tickers = os.getenv("CRYPTO_TICKERS")
+active_battery_percentage = os.getenv("BATTERY_PERCENTAGE")
 
 # Constants
 group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
@@ -429,11 +431,13 @@ def init_widgets_list():
         # -----------------------------------------------------------
         # -- LOGO IMAGE (TROPTIMUM) 
         # -----------------------------------------------------------
+        # widgets_list[0]
         widget.Image(
             filename = "~/.config/qtile/icons/trioptimum-logo.png",
             margin = 2,
             margin_x = 5
         ),
+        # widgets_list[1]
         widget.Sep(
             linewidth = 0,
             padding = 5,
@@ -443,6 +447,7 @@ def init_widgets_list():
         # -----------------------------------------------------------
         # -- WORKSPACES 
         # -----------------------------------------------------------
+        # widgets_list[2]
         widget.GroupBox(
             fontsize = 28,
             font="FontAwesome",
@@ -467,12 +472,14 @@ def init_widgets_list():
         # -----------------------------------------------------------
         # -- PROMPT AND CURRENT WINDOW NAME 
         # -----------------------------------------------------------
+        # widgets_list[3]
         widget.Prompt(
             prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
             padding = 10,
             foreground = colors["light_red"],
             background = colors["dark_grey"]
         ),
+        # widgets_list[4]
         widget.WindowName(
             foreground = colors["purple"]
         ),
@@ -480,60 +487,31 @@ def init_widgets_list():
         # -----------------------------------------------------------
         # -- SYSTEM MONITORING (VPN & NETWORK, HARD DRIVE, CPU & RAM) 
         # -----------------------------------------------------------
+        # widgets_list[5]
         widget.GenPollText(
             func=print_internet_status,
             update_interval=0.5,
             fontsize=17,
             padding=10
-            #foreground = "#fc6a03"
         ),
+        # widgets_list[6]
         widget.GenPollText(
             func=check_vpn_status,
             update_interval=0.5,
             fontsize=17
-            #foreground = "#fc6a03"
         ),
-       # widget.GenPollText(
-       #     func=get_current_country,
-       #     update_interval=0.5
-       #     #foreground = "#fc6a03"
-       # ),
-        #widget.Image(
-        #    filename = "~/.config/qtile/icons/rj45.png",
-        #    margin = 4,
-        #    margin_x = 5
-        #),
-        #widget.Net(
-        #    interface = default_network_interface,
-        #    format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
-        #),
+        # widgets_list[7]
         widget.Sep(linewidth = 1, padding = 20, foreground = colors["white"], background = colors["black_grey"]),
-        #widget.Image(
-        #    filename = "~/.config/qtile/icons/processor.png",
-        #    margin = 5,
-        #    margin_x = 5
-        #),
-        #widget.CPU(
-        #    format = '{load_percent}%'
-        #),
-        #widget.Sep(linewidth = 0, padding = 3),
-        #widget.Image(
-        #    filename = "~/.config/qtile/icons/ram.png",
-        #    margin = 3,
-        #    margin_x = 5
-        #),
-        #widget.Memory(
-        #        foreground = colors["white"],
-        #        background = colors["black_grey"],
-        #        padding = 5,
-        #        format = '{MemPercent}%'
-        #),
+        # widgets_list[8]
         widget.Sep(linewidth = 0, padding = 3),
+       
+        # widgets_list[9]
         widget.Image(
             filename = "~/.config/qtile/icons/floppy-disk.png",
             margin = 8,
             margin_x = 5
         ),
+        # widgets_list[10]
         widget.DF(
                 foreground = colors["white"],
                 background = colors["black_grey"],
@@ -543,62 +521,19 @@ def init_widgets_list():
                 visible_on_warn = False,
                 warn_space = 10
         ),
+        # widgets_list[11]
         widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
 
         # -----------------------------------------------------------
         # -- CRYPTO TICKERS
-        # -----------------------------------------------------------
+        # ----------------------------------------------------------- 
+        # widgets_list[12]
         
-        # Bitcoin ticker
-        # widget.Image(
-        #     filename = "~/.config/qtile/icons/bitcoin.png",
-        #     margin = 7,
-        #     margin_x = 5
-        # ),
-        #widget.GenPollText(
-        #    func=btc_ticker,
-        #    update_interval=30,
-        #    foreground = "#f7931a"
-        #),
-        
-        # Monero ticker
-        widget.Image(
-            filename = "~/.config/qtile/icons/monero.png",
-            margin = 7,
-            margin_x = 5
-        ),
-        widget.GenPollText(
-            func=xmr_ticker,
-            update_interval=ticker_refreshrate,
-            foreground = "#fc6a03"
-        ),
-        # Helium ticker
-        widget.Image(
-            filename = "~/.config/qtile/icons/helium.png",
-            margin = 6,
-            margin_x = 5
-        ),
-        widget.GenPollText(
-            func=hnt_ticker,
-            update_interval=ticker_refreshrate,
-            foreground = "#38a2ff"
-        ),
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
         # -----------------------------------------------------------
         # -- BATTERY
         # -----------------------------------------------------------
-        widget.Image(
-            filename = "~/.config/qtile/icons/battery.png",
-            margin = 6,
-            margin_x = 5
-        ),
-        widget.Battery(
-            format = '{percent:2.0%}'
-        ),
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        # widgets_list[13]
         
-
         # -----------------------------------------------------------
         # -- VOLUME 
         # -----------------------------------------------------------
@@ -671,6 +606,61 @@ def init_widgets_list():
             scale = 0.5
         ),
     ]
+
+    position = 12
+    
+    logger.warning(active_crypto_tickers)
+
+    if (active_crypto_tickers == "True"):
+        crypto_ticker = [
+            # Monero ticker
+            widget.Image(
+                filename = "~/.config/qtile/icons/monero.png",
+                margin = 7,
+                margin_x = 5
+            ),
+            widget.GenPollText(
+                func=xmr_ticker,
+                update_interval=ticker_refreshrate,
+                foreground = "#fc6a03"
+            ),
+            # Helium ticker
+            widget.Image(
+                filename = "~/.config/qtile/icons/helium.png",
+                margin = 6,
+                margin_x = 5
+            ),
+            widget.GenPollText(
+                func=hnt_ticker,
+                update_interval=ticker_refreshrate,
+                foreground = "#38a2ff"
+            ),
+            widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"])
+        ]
+
+        for i in range(len(crypto_ticker)):
+            widgets_list.insert(i + position, crypto_ticker[i])
+            logger.warning("Crypto_ticker: " + str(crypto_ticker[i]))
+        
+        position += i+1
+
+    if (active_battery_percentage == "True"):
+        battery_percentage = [
+            widget.Image(
+                filename = "~/.config/qtile/icons/battery.png",
+                margin = 6,
+                margin_x = 5
+            ),
+            widget.Battery(
+                format = '{percent:2.0%}'
+            ),
+            widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"])
+        ]
+        
+        for i in range(len(battery_percentage)):
+            widgets_list.insert(i + position, battery_percentage[i])
+            logger.warning("Battery_percentage: " + str(battery_percentage[i]))
+        
     return widgets_list
 
 
@@ -704,9 +694,10 @@ def init_widgets_screen3():
     return widgets_screen3            
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
+    #return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
+    #        Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
+    #        Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30))]
 
 # _______________________________________________________________________________________
 #|                                                                                       |

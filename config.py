@@ -6,8 +6,8 @@
 #                                              |___/                                                          
 
 # IMPORTANT: Create simbolic links for the "set_brightness_config" and "set_volume_config":
-# ln -s ~/.config/qtile/set_volume_config volume
-# ln -s ~/.config/qtile/set_brightness_config brightness
+# ln -s ~/.config/qtile/set_volume_config /usr/bin/volume
+# ln -s ~/.config/qtile/set_brightness_config /usr/bin/brightness
 
 # ************** Log path *************** #
 # /home/$USER/.local/share/qtile/qtile.log
@@ -15,24 +15,79 @@
 # ************** default_config path *************** #
 # /usr/lib/python3/dist-packages/libqtile/resources/default_config.py
 
+# ************** Arch default libqtile path ******** #
+# /usr/lib/python3.9/site-packages/libqtile/
+
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                                       IMPORTS                                         |
+#|_______________________________________________________________________________________|
+
 import os
 import subprocess
+import requests
 import platform
+import time
 import socket
-from libqtile.config import Key, Screen, Group, Drag, Click
+from urllib.request import urlopen
+from libqtile.config import Key, Screen, Group, Drag, Click, Match
 from libqtile.command import lazy
 from libqtile import layout, bar, widget, hook
-import os
-import subprocess
+from libqtile.log_utils import logger
+from dotenv import load_dotenv
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                              STARTUP HOOK (AUTOSTART)                                 |
+#|_______________________________________________________________________________________|
 
 @hook.subscribe.startup
 def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call([home])
 
-my_terminal= "terminator"
-alt = "mod1"
-mod = "mod4"
+
+# _______________________________________________________________________________________
+#|                                                                                       |        
+#|                                  GLOBAL VARIABLES                                     |
+#|_______________________________________________________________________________________|
+
+# Environemental variables
+load_dotenv()
+
+alt = os.getenv("ALT")
+mod = os.getenv("MOD")
+
+my_terminal = os.getenv("TERMINAL")
+my_browser = os.getenv("BROWSER")
+my_mailclient = os.getenv("MAIL_CLIENT") 
+
+headphones_macaddress = os.getenv("HP_MAC_ADDR")
+
+default_network_interface = os.getenv("WIFI_NET_INT")
+
+
+main_screen  = os.getenv("MAIN_SCREEN_NAME")
+right_screen = os.getenv("RIGHT_SCREEN_NAME") 
+left_screen  = os.getenv("LEFT_SCREEN_NAME")
+
+main_screen_res  = os.getenv("MAIN_SCREEN_RES")
+right_screen_res = os.getenv("RIGHT_SCREEN_RES") 
+left_screen_res  = os.getenv("LEFT_SCREEN_RES")
+
+ticker_refreshrate = int(os.getenv("TICKER_REFRESH_RATE"))
+
+max_percentage_volume = os.getenv("MAX_VOLUME") 
+
+active_crypto_tickers = os.getenv("CRYPTO_TICKERS")
+active_battery_percentage = os.getenv("BATTERY_PERCENTAGE")
+
+# Constants
+group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
+group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
+group_numbers_current = group_numbers_fr
 
 colors = {
     "black_grey" : "#282A36",   # panel_bg
@@ -42,77 +97,163 @@ colors = {
     "black"      : "#000000",   # other_screen_tabs_bg
     "purple"     : "#A77AC4",   # other_screen_tabs
     "french_blue": "#0055a4",
-    "french_red" : "#ef4135"
+    "french_red" : "#ef4135",
+    "green"      : "#00ff00"
 }
 
-sound_card_output_HDMI = '1'
-sound_card_output_PC = '2'
-main_screen = 'eDP-1'
-hdmi_screen = 'HDMI-1'
-displayport_screen = 'DP-1'
 
-max_percentage_volume = '100' # Maximum Percentage: 150%
+# Other variables
+sound_card_index_PC        = 'TBD'
+sound_card_index_HDMI      = 'TBD'
+sound_card_index_BLUETOOTH = 'TBD'
+sound_card_order_PC        = 'TBD'
+sound_card_order_HDMI      = 'TBD'
+sound_card_order_BLUETOOTH = 'TBD'
 
-selected_screen = {
-    "MainPC": "eDP-1",
-    "TV": "HDMI-1",
-    "DisplayPortScreen": "DP-1"
-}
 
-group_numbers_fr = ['ampersand', 'eacute', 'quotedbl', 'apostrophe', 'parenleft', 'minus', 'egrave', 'underscore', 'ccedilla']
-group_numbers_es = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-group_numbers_kp = ['KP_End', 'KP_Down', 'KP_Next', 'KP_Left','KP_Begin', 'KP_Right', 'KP_Home', 'KP_Up', 'KP_Prior']
-group_numbers_current = group_numbers_kp
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                    SITE FUNCTIONS                                     |
+#|_______________________________________________________________________________________|
 
-def xmr_ticker():
-    xmr_price = subprocess.getoutput("curl -s eur.rate.sx/1xmr")
-    xmr_price_split = xmr_price.split(".")
-    xmr_price_shown = xmr_price_split[0] + "." + xmr_price_split[1][:2]
-    return "XMR: " + xmr_price_shown + "€"
+# -----------------------------------------------------------
+# -- VPN AND INTERNET CHECKERS 
+# -----------------------------------------------------------
+def internet_on(url):
+    try:
+        response = urlopen(url, timeout=10)
+        return True
+    except: 
+        return False
 
 def get_current_country():
-    public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
-    country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
-    return country
-
-def get_vpn_status():
-    tun_status = subprocess.getoutput("ifconfig tun0")
-    if "Device not found" in tun_status:
-        return "\U0000274C"
+    internet = internet_on('https://archlinux.org/')
+    if(internet):
+        public_ip = subprocess.getoutput("dig +short myip.opendns.com @resolver1.opendns.com")
+        country = subprocess.getoutput("whois " + public_ip + " | awk ' /[Cc]ountry/{print $2}'")
+        return country.upper()
     else:
-        return "\U00002705"
-        
+        return "N/A"
+
+def print_internet_status():
+    internet = internet_on('https://archlinux.org/')
+    if (internet):
+        return '<span foreground="' + colors["green"] + '">直</span>'
+    else:
+        return '<span foreground="' + colors["french_red"] + '">睊</span>'
+
+def check_vpn_status():
+    internet = internet_on('https://archlinux.org/')
+    openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
+    #logger.warning("OpenVPN_PID: " + openvpn_pid)
+    if (not internet or openvpn_pid == ""):
+        return '<span foreground="' + colors["french_red"] + '">嬨</span>'
+    else: 
+        return '<span foreground="' + colors["green"] + '">嬨</span>'
+
+# -----------------------------------------------------------
+# -- CRYPTOCURRENCY TICKERS 
+# -----------------------------------------------------------
+def crypto_ticker(unit):
+    internet = internet_on('https://archlinux.org/')
+    if(internet):
+        price = requests.get("https://eur.rate.sx/1"+unit).content.decode("utf-8").split(".")
+        #price = subprocess.getoutput("curl -s eur.rate.sx/1" + unit)
+        price_shown = price[0] + "." + price[1][:2] + "€"
+        return price_shown
+    else:
+        return "N/A"
+
+def xmr_ticker(): return crypto_ticker("xmr") 
+def btc_ticker(): return crypto_ticker("btc") 
+def hnt_ticker(): return crypto_ticker("hnt") 
+
+# -----------------------------------------------------------
+# -- CURRENT KEYBOARD LAYOUT 
+# -----------------------------------------------------------
 def get_kb_layout():
     kb_layout = subprocess.getoutput("setxkbmap -query | grep layout | awk '{print $2}'")
-    return kb_layout
+    return kb_layout.upper()
 
-def get_current_volume1():
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==1{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==1{print $2}'")
-    if(volume == ""):
+# -----------------------------------------------------------
+# -- VOLUME AND SINK MANAGEMENT 
+# -----------------------------------------------------------
+def get_all_volume_sinks():
+    global sound_card_index_PC
+    global sound_card_index_HDMI
+    global sound_card_index_BLUETOOTH
+    global sound_card_order_PC 
+    global sound_card_order_HDMI
+    global sound_card_order_BLUETOOTH 
+    
+    all_sink_indexes = subprocess.getoutput("pacmd list-sinks | grep 'index' | cut -f 2 -d ':' | cut -f 2 -d ' '").split('\n')
+    # all_sink_indexes output example:
+    # 1
+    # 2
+    # 6
+    
+    all_sink = subprocess.getoutput("pacmd list-sinks | grep 'name: <' | cut -f 2 -d ':'").split('\n')
+    # all_sink output example:
+    # <alsa_output.pci-0000_00_1b.0.analog-stereo>
+    # <alsa_output.pci-0000_00_03.0.hdmi-stereo>
+    # <bluez_sink.60_AB_D2_76_99_38.a2dp_sink>
+
+    if(len(all_sink) != len(all_sink_indexes)):
+        logger.warning("ERROR: Check get_all_volume_sinks() - Arrays all_sink and all_sink_indexes have a different size")
+        return None
+    else:
+        for index,sink in enumerate(all_sink):
+            if "analog-stereo" in sink:
+                #logger.warning("analog-stereo - index PC: " + all_sink_indexes[index] + " / order PC: " + str(index))
+                sound_card_index_PC = all_sink_indexes[index]
+                sound_card_order_PC = index
+            elif "hdmi-stereo" in sink:
+                #logger.warning("hdmi-stereo - index HDMI: " + all_sink_indexes[index] + " / order HDMI: " + str(index))
+                sound_card_index_HDMI = all_sink_indexes[index]
+                sound_card_order_HDMI = index
+            elif "bluez_sink" in sink:
+                #logger.warning("bluez_sink - index BLUETOOTH: " + all_sink_indexes[index] + " / order BLUETOOTH: " + str(index))
+                sound_card_index_BLUETOOTH = all_sink_indexes[index]
+                sound_card_order_BLUETOOTH = index
+            else:
+                logger.warning("ERROR: Check get_all_volume_sinks() - Values: \n - sink: " + sink + "\n - order_index: " + str(index) + "\n - sink_index: " + all_sink_indexes[index])
+
+def get_current_volume(sink_order):
+    if(sink_order == 'TBD'):
         return "N/A"
     else:
-        if(muted == "yes"):
-            return "M"
+        volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
+        muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
+        if(volume == ""):
+            return "N/A"
         else:
-            return volume + "%"
+            if(muted == "yes"):
+                # return "M"
+                return "M" # nf-mdi-volume_mute
+            else:
+                return volume + "%"
     
-def get_current_volume2():
-    volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==2{print $5+0}'")
-    muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==2{print $2}'")
-    if(volume == ""):
-        return "N/A"
+def get_current_volume_PC():
+    get_all_volume_sinks()
+    return get_current_volume(sound_card_order_PC)
+def get_current_volume_HDMI():
+    get_all_volume_sinks()
+    return get_current_volume(sound_card_order_HDMI)
+def get_current_volume_BLUETOOTH():
+    get_all_volume_sinks()
+    #return get_current_volume(sound_card_order_BLUETOOTH)
+    blutooth_volume = get_current_volume(sound_card_order_BLUETOOTH)
+    if(blutooth_volume == "N/A"):
+        return "ﳌ" # Nerd fonts: nf-mdi-headphones_off
     else:
-        if(muted == "yes"):
-            return "M"
-        else:
-            return volume + "%"
-    
-# Not used
-#def get_keycode():
-#    keycode = subprocess.getoutput("xmodmap -pke | grep KP_1 | awk '{print $2}'")
-#    return keycode
+        return "" # Nerd fonts: nf-mdi-headphones
 
+get_all_volume_sinks()
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                       KEY BINDINGS                                    |
+#|_______________________________________________________________________________________|
 keys = [
     # Main key bindings
     Key([mod], "k", lazy.layout.down()),
@@ -148,71 +289,107 @@ keys = [
     Key([mod, alt], group_numbers_current[0], lazy.to_screen(0)),
     Key([mod, alt], group_numbers_current[1], lazy.to_screen(1)),
     Key([mod, alt], group_numbers_current[2], lazy.to_screen(2)),
+    
+    Key([mod, alt], group_numbers_kp[0], lazy.to_screen(0)),
+    Key([mod, alt], group_numbers_kp[1], lazy.to_screen(1)),
+    Key([mod, alt], group_numbers_kp[2], lazy.to_screen(2)),
 
     # Shift keyboard layout
     Key(["shift", alt], "e", lazy.spawn("setxkbmap es")),
     Key(["shift", alt], "f", lazy.spawn("setxkbmap fr")),
 
+
+    # Open VPN activation / deactivation 
+    # Create or add sudoers.d/custom_sudoers and add some exceptions:
+    # $ sudo visudo -f /etc/sudoers.d/custom_sudoers
+    # ALL ALL=NOPASSWD: /bin/systemctl start vpnd_bordeaux.service
+    # ALL ALL=NOPASSWD: /bin/systemctl stop vpnd_bordeaux.service
+    # ALL ALL=NOPASSWD: /usr/bin/pkill openvpn
+
+    Key([mod], "v", lazy.spawn("sudo systemctl start vpnd_bordeaux.service")),
+    Key([mod, "control"], "v", lazy.spawn("sudo pkill openvpn")),
+
     # Open Firefox
-    Key([mod], "f", lazy.spawn("firefox")),
+    Key([mod], "f", lazy.spawn(my_browser)),
     # Open Tor Browser
-    Key([mod], "t", lazy.spawn("torbrowser-launcher")),
+    Key([mod], "t", lazy.spawn("torbrowser-launcher")), 
+    # Open Mail Client Thunderbird
+    Key([mod, "control"], "m", lazy.spawn(my_mailclient)),
+    # Open VirtualBox 
+    #Key([mod], "v", lazy.spawn("virtualbox")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
     # Open Session
     Key([mod], "s", lazy.spawn("./SourceCode/Session/session-desktop-linux-x86_64-1.4.4.AppImage")),
     # Open config
     Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
+    # Open Bitwarden
+    Key([mod], "b", lazy.spawn("./SourceCode/Bitwarden.AppImage")),
+
+    # Enable / Disable bluetooth headphones
+    Key([mod], "h", lazy.spawn("bluetoothctl connect " + headphones_macaddress)),
+    Key([mod, "control"], "h", lazy.spawn("bluetoothctl power on")),
+    Key([mod, alt], "h", lazy.spawn("bluetoothctl power off")),
 
     # Reload Multiple Screens (2 Screens - Main + Left)
-    Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen)),
+    Key([mod], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode " + main_screen_res + " --output " + left_screen + " --mode " + left_screen_res + " --left-of " + main_screen)),   
     # Reload Multiple Screens (2 Screens - Main + Right)
-    Key([mod, "shift"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1600x900  --right-of " + main_screen)),
+    Key([mod, "shift"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode " + main_screen_res + " --output " + right_screen + " --mode " + right_screen_res + " --right-of " + main_screen)),
     # Reload Multiple Screens (3 Screens)
-    Key([mod, "control"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode 1920x1080 --output " + hdmi_screen + " --mode 1920x1080  --left-of " + main_screen + " --output " + displayport_screen + " --mode 1600x900 --right-of " + main_screen)),
+    Key([mod, "control"], "x", lazy.spawn("xrandr --output " + main_screen + " --primary --mode " + main_screen_res + " --output " + left_screen + " --mode " + left_screen_res + " --left-of " + main_screen + " --output " + right_screen + " --mode " + right_screen_res + " --right-of " + main_screen)),
 
-    # Output volume control HDMI
-    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI + " -5%")),
-    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_HDMI+ " +5%")),
-    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_HDMI + " toggle")), 
     # Output volume control PC
-    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " -5%")),
-    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_output_PC + " +5%")),
-    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_output_PC + " toggle")),
+    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " -5%")),
+    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " +5%")),
+    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_PC + " toggle")),
+    # Output volume control HDMI
+    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI + " -5%")),
+    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI+ " +5%")),
+    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_HDMI + " toggle")), 
 
-    # Brightness and state control Main Screen (PC)
+    # Brightness and state control main screen
     Key([], 'XF86MonBrightnessUp', lazy.spawn("brightness " + main_screen + " + 50 ")),
     Key([], 'XF86MonBrightnessDown', lazy.spawn("brightness " + main_screen + " - 50 ")),
-    # Brightness and state control HDMI Screen (TV)
-    Key(["control"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + hdmi_screen + " + 50 ")),
-    Key(["control"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + hdmi_screen + " - 50 ")),
-    # Brightness and state control Mini Display Port Screen (Screen2)
-    Key(["shift"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + displayport_screen + " + 50 ")),
-    Key(["shift"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + displayport_screen + " - 50 ")),
+    # Brightness and state control right screen
+    Key(["control"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + right_screen + " + 50 ")),
+    Key(["control"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + right_screen + " - 50 ")),
+    # Brightness and state control left screen
+    Key(["shift"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + left_screen + " + 50 ")),
+    Key(["shift"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + left_screen + " - 50 ")),
 
     # Move to previous group
     Key(["control", alt], "Left", lazy.screen.prev_group()),
     Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
-group_names = [("DEV",  {'layout': 'monadtall'}),
-               ("WWW",  {'layout': 'monadtall'}),
-               ("SYS",  {'layout': 'monadtall'}),
-               ("DOC",  {'layout': 'monadtall'}),
-               ("VM",   {'layout': 'monadtall'}),
-               ("CHAT", {'layout': 'monadtall'}),
-               ("OBS",  {'layout': 'monadtall'}),
-               ("VPS",  {'layout': 'monadtall'}),
-               ("GFX",  {'layout': 'floating'})]
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                       WORKSPACES                                      |
+#|_______________________________________________________________________________________|
+group_names = [("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'max'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'}),
+               ("",  {'layout': 'monadtall'})]
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
 for i, (name, kwargs) in enumerate(group_names, 0):
-    keypad_indx = group_numbers_current[i]
+    keypad_indx = group_numbers_kp[i]
+    key_indx = group_numbers_current[i]
     keys.append(Key([mod], keypad_indx, lazy.group[name].toscreen()))
     keys.append(Key([mod, 'shift'], keypad_indx, lazy.window.togroup(name)))
+    keys.append(Key([mod], key_indx, lazy.group[name].toscreen()))
+    keys.append(Key([mod, 'shift'], key_indx, lazy.window.togroup(name)))
         
-
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                        LAYOUTS                                        |
+#|_______________________________________________________________________________________|
 layout_theme = {
     "border_width": 2,
     "margin": 20,
@@ -222,222 +399,9 @@ layout_theme = {
 
 layouts = [
     layout.MonadTall(**layout_theme, ratio=0.6),
-    layout.Max(**layout_theme),
-    layout.Stack(num_stacks=2),
-    layout.Floating(**layout_theme)
+    layout.Max(**layout_theme)
+    #layout.Floating(**layout_theme)
 ]
-
-widget_defaults = dict(
-    font='Ubuntu Bold',
-    fontsize=11,
-    padding=3,
-    background = colors["black_grey"] 
-)
-
-def init_widgets_list():
-    widgets_list = [
-
-        widget.Image(
-            filename = "~/.config/qtile/icons/trioptimum-logo.png",
-            margin = 2,
-            margin_x = 5
-        ),
-
-        widget.Sep(
-            linewidth = 0,
-            padding = 5,
-            foreground = colors["white"],
-            background = colors["black_grey"]
-        ),
-        widget.GroupBox(font="Ubuntu Bold",
-            #fontsize = 12,
-            margin_x = 0,
-            margin_y = 2,
-            padding_x = 8,
-            padding_y = 8,
-            borderwidth = 1,
-            active = colors["white"],
-            inactive = colors["white"],
-            highlight_method = "block",
-            rounded = False,
-            this_current_screen_border = colors["purple"],
-            this_screen_border = colors["dark_grey"],
-            other_current_screen_border = colors["black_grey"],
-            other_screen_border = colors["black_grey"],
-            foreground = colors["white"],
-            background = colors["black_grey"]
-        ),
-
-        widget.Prompt(
-            prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
-            font = "Ubuntu Mono",
-            padding = 10,
-            foreground = colors["light_red"],
-            background = colors["dark_grey"]
-        ),
-
-        widget.WindowName(
-            foreground = colors["purple"]
-        ),
-        
-        widget.TextBox(
-            background = colors["white"],
-            foreground = colors["black_grey"],
-            text = "SkrivRoot-MAIN", 
-            name="default"
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        widget.Image(
-            filename = "~/.config/qtile/icons/rj45.png",
-            margin = 2,
-            margin_x = 5
-        ),
-        widget.Net(
-            interface = "wlp5s0",
-            format = '{down} ▼▲ {up}' # format = '{interface}: {down} ▼▲ {up}'
-        ),
-        widget.TextBox(
-            text = "\U000027A4 VPN ",
-            foreground = "#33cc00"
-        ),
-        # VPN Status + Public IP Country
-        widget.GenPollText(
-            func=get_vpn_status,
-            update_interval=5,
-            foreground = "#33cc00"
-        ),
-        widget.GenPollText(
-            func=get_current_country,
-            update_interval=5,
-            foreground = "#33cc00"
-        ),
-
-        widget.Sep(linewidth = 0, padding = 3),
-        widget.Image(
-            filename = "~/.config/qtile/icons/processor.png",
-            margin = 2,
-            margin_x = 5
-        ),
-        widget.CPU(
-            format = '{load_percent}%'
-        ),
-
-        widget.Sep(linewidth = 0, padding = 3),
-        widget.Image(
-            filename = "~/.config/qtile/icons/ram.png",
-            margin = 2,
-            margin_x = 5
-        ),
-        widget.Memory(
-                foreground = colors["white"],
-                background = colors["black_grey"],
-                padding = 5,
-                format = '{MemUsed}Mb ({MemPercent}%)'
-        ),
-
-        widget.Sep(linewidth = 0, padding = 3),
-        widget.Image(
-            filename = "~/.config/qtile/icons/hard_drive.png",
-            margin = 2,
-            margin_x = 5
-        ),
-        widget.DF(
-                foreground = colors["white"],
-                background = colors["black_grey"],
-                padding = 5,
-                partition = '/',
-                format = '{uf}Gb ({r:.0f}%)',
-                visible_on_warn = False,
-                warn_space = 10
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
-        # Bitcoin ticker
-        widget.BitcoinTicker(
-            foreground = "#f7931a"
-        ),
-
-        # Monero ticker
-        widget.GenPollText(
-            func=xmr_ticker,
-            update_interval=30,
-            foreground = "#fc6a03"
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
-        widget.CurrentLayoutIcon(
-            custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
-            background = colors["black_grey"],
-            padding = 0,
-            scale = 0.5
-        ),
-        #widget.CurrentLayout(**widget_defaults),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-
-        widget.TextBox(text = "\U0001F50B"),
-        widget.Battery(
-            format = '{percent:2.0%}'
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        
-        # Volume
-        widget.TextBox(text = "\U0001F50A"),
-        widget.GenPollText(
-            func=get_current_volume1,
-            update_interval=0.2,
-        ),
-        widget.TextBox(text = "\U0001F50A"),
-        widget.GenPollText(
-            func=get_current_volume2,
-            update_interval=0.2,
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        
-        widget.TextBox(text = "\u2328"),
-        widget.GenPollText(
-            func=get_kb_layout,
-            update_interval=0.5,
-        ),
-
-        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
-        
-        widget.Clock(format='📅  %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
-    ]
-    return widgets_list
-
-
-def init_widgets_screen1():
-    widgets_screen1 = init_widgets_list() # Slicing removes unwanted widgets on Monitors 1,3
-    return widgets_screen1
-
-def init_widgets_screen2():
-    widgets_screen2 = init_widgets_list()
-    widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "HDMI-Left", name="default")
-    return widgets_screen2
-
-def init_widgets_screen3():
-    widgets_screen3 = init_widgets_list()
-    widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "DP-Right", name="default")
-    return widgets_screen3            
-
-def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=25)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=25))]
-
-
-if __name__ in ["config", "__main__"]:
-    screens = init_screens()
-    widgets_list = init_widgets_list()
-    widgets_screen1 = init_widgets_screen1()
-    widgets_screen2 = init_widgets_screen2()
-
 
 # Drag floating layouts.
 mouse = [
@@ -448,30 +412,323 @@ mouse = [
     Click([mod], "Button2", lazy.window.bring_to_front())
 ]
 
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                  BAR CONFIGURATION                                    |
+#|_______________________________________________________________________________________|
+
+widget_defaults = dict(
+    font='Fira Code Nerd Font',
+    #font='Caskaydia Cove Nerd Font',
+    #font='Ubuntu Bold',
+    fontsize=12,
+    padding=7,
+    background = colors["black_grey"] 
+)
+
+def init_widgets_list():
+    widgets_list = [
+        # -----------------------------------------------------------
+        # -- LOGO IMAGE (TROPTIMUM) 
+        # -----------------------------------------------------------
+        # widgets_list[0]
+        widget.Image(
+            filename = "~/.config/qtile/icons/trioptimum-logo.png",
+            margin = 2,
+            margin_x = 5
+        ),
+        # widgets_list[1]
+        widget.Sep(
+            linewidth = 0,
+            padding = 5,
+            foreground = colors["white"],
+            background = colors["black_grey"]
+        ),
+        # -----------------------------------------------------------
+        # -- WORKSPACES 
+        # -----------------------------------------------------------
+        # widgets_list[2]
+        widget.GroupBox(
+            fontsize = 28,
+            font="FontAwesome",
+            margin_x = 0,
+            margin_y = 3,
+            center_aligned = True,
+            padding_x = 12,
+            padding_y = 5,
+            borderwidth = 2,
+            inactive = colors["white"],
+            highlight_method = "block",
+            rounded = False,
+            active = colors["white"],
+            this_current_screen_border = colors["purple"],
+            this_screen_border = colors["dark_grey"],
+            other_current_screen_border = colors["black_grey"],
+            other_screen_border = colors["black_grey"],
+            foreground = colors["white"],
+            background = colors["black_grey"]
+        ),
+
+        # -----------------------------------------------------------
+        # -- PROMPT AND CURRENT WINDOW NAME 
+        # -----------------------------------------------------------
+        # widgets_list[3]
+        widget.Prompt(
+            prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
+            padding = 10,
+            foreground = colors["light_red"],
+            background = colors["dark_grey"]
+        ),
+        # widgets_list[4]
+        widget.WindowName(
+            foreground = colors["purple"]
+        ),
+        
+        # -----------------------------------------------------------
+        # -- SYSTEM MONITORING (VPN & NETWORK, HARD DRIVE, CPU & RAM) 
+        # -----------------------------------------------------------
+        # widgets_list[5]
+        widget.GenPollText(
+            func=print_internet_status,
+            update_interval=0.5,
+            fontsize=17,
+            padding=10
+        ),
+        # widgets_list[6]
+        widget.GenPollText(
+            func=check_vpn_status,
+            update_interval=0.5,
+            fontsize=17
+        ),
+        # widgets_list[7]
+        widget.Sep(linewidth = 1, padding = 20, foreground = colors["white"], background = colors["black_grey"]),
+        # widgets_list[8]
+        widget.Sep(linewidth = 0, padding = 3),
+       
+        # widgets_list[9]
+        widget.Image(
+            filename = "~/.config/qtile/icons/floppy-disk.png",
+            margin = 8,
+            margin_x = 5
+        ),
+        # widgets_list[10]
+        widget.DF(
+                foreground = colors["white"],
+                background = colors["black_grey"],
+                padding = 5,
+                partition = '/',
+                format = '{uf}Gb ({r:.0f}%)',
+                visible_on_warn = False,
+                warn_space = 10
+        ),
+        # widgets_list[11]
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+        # -----------------------------------------------------------
+        # -- CRYPTO TICKERS
+        # ----------------------------------------------------------- 
+        # widgets_list[12]
+        
+        # -----------------------------------------------------------
+        # -- BATTERY
+        # -----------------------------------------------------------
+        # widgets_list[13]
+        
+        # -----------------------------------------------------------
+        # -- VOLUME 
+        # -----------------------------------------------------------
+        
+        # Volume PC      
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 7,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=get_current_volume_PC,
+            update_interval=0.1,
+            #fontsize=13
+        ), 
+        widget.Sep(padding = 5, linewidth=0),
+        
+        # Volume HDMI
+        # widget.Image(
+        #     filename = "~/.config/qtile/icons/volume.png",
+        #     margin = 7,
+        #     margin_x = 5
+        # ),
+        # widget.GenPollText(
+        #     func=get_current_volume_HDMI,
+        #     update_interval=0.1,
+        #     #fontsize=13
+        # ),
+        # widget.Sep(padding = 5, linewidth=0),
+
+        # Bluetooth headphones state
+        widget.GenPollText(
+            func=get_current_volume_BLUETOOTH,
+            update_interval=0.1,
+            fontsize=19
+        ),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+        
+
+        # -----------------------------------------------------------
+        # -- KEYBOARD LAYOUT
+        # -----------------------------------------------------------
+        
+        # widget.Image(
+        #     filename = "~/.config/qtile/icons/keyboard.png",
+        #     margin = 7,
+        #     margin_x = 5
+        # ), 
+        widget.GenPollText(
+            func=get_kb_layout,
+            update_interval=0.5,
+        ),
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+
+        # -----------------------------------------------------------
+        # -- DATE AND TIME  
+        # -----------------------------------------------------------
+        #widget.Clock(format=' %a, %d %b. %Y - %H:%M:%S'), # %S for adding seconds
+        widget.Clock(format='%d/%m/%Y - %H:%M:%S'), # %S for adding seconds
+        widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"]),
+
+        # -----------------------------------------------------------
+        # -- CURRENT LAYOUT 
+        # -----------------------------------------------------------
+        widget.CurrentLayoutIcon(
+            custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
+            background = colors["black_grey"],
+            padding = 0,
+            scale = 0.5
+        ),
+    ]
+
+    position = 12
+    
+    logger.warning(active_crypto_tickers)
+
+    if (active_crypto_tickers == "True"):
+        crypto_ticker = [
+            # Monero ticker
+            widget.Image(
+                filename = "~/.config/qtile/icons/monero.png",
+                margin = 7,
+                margin_x = 5
+            ),
+            widget.GenPollText(
+                func=xmr_ticker,
+                update_interval=ticker_refreshrate,
+                foreground = "#fc6a03"
+            ),
+            # Helium ticker
+            widget.Image(
+                filename = "~/.config/qtile/icons/helium.png",
+                margin = 6,
+                margin_x = 5
+            ),
+            widget.GenPollText(
+                func=hnt_ticker,
+                update_interval=ticker_refreshrate,
+                foreground = "#38a2ff"
+            ),
+            widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"])
+        ]
+
+        for i in range(len(crypto_ticker)):
+            widgets_list.insert(i + position, crypto_ticker[i])
+            logger.warning("Crypto_ticker: " + str(crypto_ticker[i]))
+        
+        position += i+1
+
+    if (active_battery_percentage == "True"):
+        battery_percentage = [
+            widget.Image(
+                filename = "~/.config/qtile/icons/battery.png",
+                margin = 6,
+                margin_x = 5
+            ),
+            widget.Battery(
+                format = '{percent:2.0%}'
+            ),
+            widget.Sep(linewidth = 1, padding = 10, foreground = colors["white"], background = colors["black_grey"])
+        ]
+        
+        for i in range(len(battery_percentage)):
+            widgets_list.insert(i + position, battery_percentage[i])
+            logger.warning("Battery_percentage: " + str(battery_percentage[i]))
+        
+    return widgets_list
+
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                  SCREEN CONFIGURATIONS                                |
+#|_______________________________________________________________________________________|
+
+def init_widgets_screen1():
+    widgets_screen1 = init_widgets_list() # Slicing removes unwanted widgets on Monitors 1,3
+    return widgets_screen1
+
+def init_widgets_screen2():
+    widgets_screen2 = init_widgets_list()
+    widgets_screen2[0] = widget.Image(
+            filename = "~/.config/qtile/icons/trioptimum-logo-blue.png",
+            margin = 2,
+            margin_x = 5
+    )
+    #widgets_screen2[5] = widget.TextBox(background = colors["french_blue"], foreground = colors["white"], text = "HDMI-Left", name="default")
+    return widgets_screen2
+
+def init_widgets_screen3():
+    widgets_screen3 = init_widgets_list()
+    widgets_screen3[0] = widget.Image(
+            filename = "~/.config/qtile/icons/trioptimum-logo-red.png",
+            margin = 2,
+            margin_x = 5
+    )
+    #widgets_screen3[5] = widget.TextBox(background = colors["french_red"], foreground = colors["white"], text = "DP-Right", name="default")
+    return widgets_screen3            
+
+def init_screens():
+    #return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
+    #        Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
+    #        Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30))]
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                     OTHER OPTIONS                                     |
+#|_______________________________________________________________________________________|
 dgroups_key_binder = None
 dgroups_app_rules = []
 main = None
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating(float_rules=[
-    {'wmclass': 'confirm'},
-    {'wmclass': 'dialog'},
-    {'wmclass': 'download'},
-    {'wmclass': 'error'},
-    {'wmclass': 'file_progress'},
-    {'wmclass': 'notification'},
-    {'wmclass': 'splash'},
-    {'wmclass': 'toolbar'},
-    {'wmclass': 'confirmreset'},  # gitk
-    {'wmclass': 'makebranch'},  # gitk
-    {'wmclass': 'maketag'},  # gitk
-    {'wname': 'branchdialog'},  # gitk
-    {'wname': 'pinentry'},  # GPG key password entry
-    {'wmclass': 'ssh-askpass'},  # ssh-askpass
-    {"wmclass": "obs"},
-    {"wmclass": "notify"},
-])
+
+# floating_layout = layout.Floating(float_rules=[
+#     {'wmclass': 'confirm'},
+#     {'wmclass': 'dialog'},
+#     {'wmclass': 'download'},
+#     {'wmclass': 'error'},
+#     {'wmclass': 'file_progress'},
+#     {'wmclass': 'notification'},
+#     {'wmclass': 'splash'},
+#     {'wmclass': 'toolbar'},
+#     {'wmclass': 'confirmreset'},  # gitk
+#     {'wmclass': 'makebranch'},  # gitk
+#     {'wmclass': 'maketag'},  # gitk
+#     {'wname': 'branchdialog'},  # gitk
+#     {'wname': 'pinentry'},  # GPG key password entry
+#     {'wmclass': 'ssh-askpass'},  # ssh-askpass
+#     {"wmclass": "obs"},
+#     {"wmclass": "notify"},
+# ])
+
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 extentions = []
@@ -485,3 +742,11 @@ extentions = []
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
 wmname = "LG3D"
+
+
+# _______________________________________________________________________________________
+#|                                                                                       |
+#|                                          MAIN                                         |
+#|_______________________________________________________________________________________|
+if __name__ in ["config", "__main__"]:
+    screens = init_screens()

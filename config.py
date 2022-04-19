@@ -694,10 +694,9 @@ def init_widgets_screen3():
     return widgets_screen3            
 
 def init_screens():
-    #return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
-    #        Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
-    #        Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=1.0, size=30)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=1.0, size=30)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen3(), opacity=1.0, size=30))]
 
 # _______________________________________________________________________________________
 #|                                                                                       |

@@ -26,13 +26,17 @@ cp .env.fractal .env
 ```
 5. Move the `qtile.desktop` file to `/usr/share/xsessions`
 ```
-cp qtile.desktop /usr/share/xsessions
+cp display_system_conf/qtile.desktop /usr/share/xsessions
 ```
-5. Append the contents of `.xprofile` to the user's file
+6. Append the contents of `.xprofile` to the user's file
 ```
-cat .xprofile >>  ~/.xprofile
+cat display_system_conf/.xprofile >>  ~/.xprofile
 ```
-6. If lightdm is used as a display manager, modify the following lines in the config file:
+7. Move the `20_keyboard.conf` file to `/etc/X11/xorg.conf.d`
+```
+cat display_system_conf/20_keyboard.conf >> /etc/X11/xorg.conf.d
+```
+8. If lightdm is used as a display manager, modify the following lines in the config file:
 ```
 vim /etc/lightdm/lightdm.conf
 
@@ -44,7 +48,7 @@ user-session=qtile
 [...]
 ```
 
-7. Reboot. Check the qtile logs for any errors:
+9. Reboot. Check the qtile logs for any errors:
 ```
 tail /home/$USER/.local/share/qtile/qtile.log
 ```

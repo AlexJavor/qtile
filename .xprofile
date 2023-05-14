@@ -1,0 +1,4 @@
+# Keyboard Layout
+setxkbmap fr &
+# Compositor
+picom &

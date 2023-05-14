@@ -1,2 +1,4 @@
 # Ignore py_cache/
 __pycache__/
+# Ignore .env (renamed from git repo)
+.env

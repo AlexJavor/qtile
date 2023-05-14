@@ -358,8 +358,8 @@ keys = [
     Key(["shift"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + left_screen + " - 50 ")),
 
     # Move to previous group
-    Key(["control", alt], "Left", lazy.screen.prev_group()),
-    Key(["control", alt], "Right", lazy.screen.next_group()),
+    #Key(["control", alt], "Left", lazy.screen.prev_group()),
+    #Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
 
 # _______________________________________________________________________________________
@@ -552,17 +552,17 @@ def init_widgets_list():
         widget.Sep(padding = 5, linewidth=0),
         
         # Volume HDMI
-        # widget.Image(
-        #     filename = "~/.config/qtile/icons/volume.png",
-        #     margin = 7,
-        #     margin_x = 5
-        # ),
-        # widget.GenPollText(
-        #     func=get_current_volume_HDMI,
-        #     update_interval=0.1,
-        #     #fontsize=13
-        # ),
-        # widget.Sep(padding = 5, linewidth=0),
+        widget.Image(
+            filename = "~/.config/qtile/icons/volume.png",
+            margin = 7,
+            margin_x = 5
+        ),
+        widget.GenPollText(
+            func=get_current_volume_HDMI,
+            update_interval=0.1,
+            #fontsize=13
+        ),
+        widget.Sep(padding = 5, linewidth=0),
 
         # Bluetooth headphones state
         widget.GenPollText(

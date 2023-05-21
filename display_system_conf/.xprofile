@@ -1,5 +1,4 @@
 source ~/.config/qtile/.env
-
 # Setup screens
 xrandr --output $RIGHT_SCREEN_NAME --primary --mode $RIGHT_SCREEN_RES --output $LEFT_SCREEN_NAME --mode $LEFT_SCREEN_RES --left-of $RIGHT_SCREEN_NAME
 # Keyboard Layout

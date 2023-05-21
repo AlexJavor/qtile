@@ -36,12 +36,7 @@ from libqtile.command import lazy
 from libqtile import layout, bar, widget, hook
 from libqtile.log_utils import logger
 from dotenv import load_dotenv
-#from core.conf import (
-#	colors, 
-#	FONT, 
-#	PATH_LAYOUT_ICONS,
-#	SOUND_SINK_NAME
-#)
+
 from widget.custom_groupbox             import CustomGroupBox
 from widget.custom_textbox              import CustomTextBox
 from widget.custom_image                import CustomImage

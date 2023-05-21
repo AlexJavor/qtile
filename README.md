@@ -9,6 +9,9 @@ pacman -S qtile
 pacman -S xorg xorg-xinit picom lightdm lightdm-slick-greeter dmenu feh arc-gtk-theme arc-icon-theme
 yay -S nerd-fonts-fira-code
 yay -S ttf-nerd-fonts-symbols
+yay -S ttf-nerd-fonts-symbols-common
+yay -S ttf-nerd-fonts-symbols-mono
+yay -S ttf-sourcecodepro-nerd
 ```
 2. Create the directory `~/.config/qtile` and clone the GitHub repository
 ```

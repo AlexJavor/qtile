@@ -64,7 +64,6 @@ def autostart():
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call([home])
 
-
 # _______________________________________________________________________________________
 #|                                                                                       |        
 #|                                  GLOBAL VARIABLES                                     |
@@ -89,6 +88,9 @@ right_screen_res = os.getenv("RIGHT_SCREEN_RES")
 left_screen  = os.getenv("LEFT_SCREEN_NAME")
 left_screen_res  = os.getenv("LEFT_SCREEN_RES")
 
+mobo_sound_sink_name = os.getenv("MOBO_SOUND_SINK_NAME")
+bluetooth_sound_sink_name = os.getenv("BLUETOOTH_SOUND_SINK_NAME")
+
 ticker_refreshrate = int(os.getenv("TICKER_REFRESH_RATE"))
 
 max_percentage_volume = os.getenv("MAX_VOLUME") 
@@ -104,7 +106,6 @@ group_numbers_current = group_numbers_fr
 
 
 PATH_LAYOUT_ICONS	= os.path.expanduser("~/.config/qtile/icons")
-#FONT = "FiraCode Nerd Font" 	# Do not use Mono. Because icons will appears as too small.
 FONT = "SauceCodePro Nerd Font"
 colors = {
 	#"white"			: "#d3d7cf",
@@ -114,10 +115,13 @@ colors = {
 	"light_black"	: "#2e3436",
 	"red"			: "#ef2929",
 	"light_red"		: "#bf616a",   # layout_widget_bg
+	"dark_red"		: "#b11a03",   
 	"blue"		 	: "#3465a4",	
 	"light_blue"	: "#81a1c1",	
 	"cyan" 			: "#f57900",	
 	"light_cyan"	: "#fcaf3e",	
+	"dark_green"	: "#037f51",	
+	"green"			: "#8ae234",
 	"green"			: "#8ae234",
 	"light_green"	: "#a3be8c",
 	"yellow"		: "#edd400",
@@ -132,16 +136,6 @@ colors = {
     "french_red"    : "#ef4135",
 	"transparent"	: "#00000000"
 }
-
-
-# Other variables
-sound_card_index_PC        = 'TBD'
-sound_card_index_HDMI      = 'TBD'
-sound_card_index_BLUETOOTH = 'TBD'
-sound_card_order_PC        = 'TBD'
-sound_card_order_HDMI      = 'TBD'
-sound_card_order_BLUETOOTH = 'TBD'
-
 
 # _______________________________________________________________________________________
 #|                                                                                       |
@@ -170,18 +164,17 @@ def get_current_country():
 def print_internet_status():
     internet = internet_on('https://archlinux.org/')
     if (internet):
-        return '<span foreground="' + colors["green"] + '">直</span>'
+        return '<span foreground="' + colors["dark_green"] + '">󰱓</span>'
     else:
-        return '<span foreground="' + colors["french_red"] + '">睊</span>'
+        return '<span foreground="' + colors["dark_red"] + '">󰅛</span>'
 
 def check_vpn_status():
-    internet = internet_on('https://archlinux.org/')
-    openvpn_pid = subprocess.getoutput("ps aux | grep openvpn | grep root | awk '{print $2}'")
-    #logger.warning("OpenVPN_PID: " + openvpn_pid)
-    if (not internet or openvpn_pid == ""):
-        return '<span foreground="' + colors["french_red"] + '">嬨</span>'
-    else: 
-        return '<span foreground="' + colors["green"] + '">嬨</span>'
+	internet = internet_on('https://archlinux.org/')
+	tun_status = subprocess.getoutput("ip addr show | grep 'tun'")
+	if (not internet or tun_status == ""):
+		return '<span foreground="' + colors["dark_red"] + '">󰖂</span>'
+	else:
+		return '<span foreground="' + colors["dark_green"] + '">󰖂</span>'
 
 # -----------------------------------------------------------
 # -- CRYPTOCURRENCY TICKERS 
@@ -210,77 +203,17 @@ def get_kb_layout():
 # -----------------------------------------------------------
 # -- VOLUME AND SINK MANAGEMENT 
 # -----------------------------------------------------------
-def get_all_volume_sinks():
-    global sound_card_index_PC
-    global sound_card_index_HDMI
-    global sound_card_index_BLUETOOTH
-    global sound_card_order_PC 
-    global sound_card_order_HDMI
-    global sound_card_order_BLUETOOTH 
-    
-    all_sink_indexes = subprocess.getoutput("pacmd list-sinks | grep 'index' | cut -f 2 -d ':' | cut -f 2 -d ' '").split('\n')
-    # all_sink_indexes output example:
-    # 1
-    # 2
-    # 6
-    
-    all_sink = subprocess.getoutput("pacmd list-sinks | grep 'name: <' | cut -f 2 -d ':'").split('\n')
+
+def is_bluetooth_hp_connected():	
+    all_sinks = subprocess.getoutput('pactl list sinks | grep Name: | xargs -L 1 | cut -d " " -f 2')
     # all_sink output example:
-    # <alsa_output.pci-0000_00_1b.0.analog-stereo>
-    # <alsa_output.pci-0000_00_03.0.hdmi-stereo>
-    # <bluez_sink.60_AB_D2_76_99_38.a2dp_sink>
-
-    if(len(all_sink) != len(all_sink_indexes)):
-        logger.warning("ERROR: Check get_all_volume_sinks() - Arrays all_sink and all_sink_indexes have a different size")
-        return None
+	# alsa_output.pci-0000_03_00.1.hdmi-stereo
+	# alsa_output.pci-0000_00_1f.3.analog-stereo
+	# bluez_output.60_AB_D2_76_99_38.1
+    if "bluez_output" in all_sinks:
+        return "󰋋" # Nerd fonts: nf-mdi-headphones_off
     else:
-        for index,sink in enumerate(all_sink):
-            if "analog-stereo" in sink:
-                #logger.warning("analog-stereo - index PC: " + all_sink_indexes[index] + " / order PC: " + str(index))
-                sound_card_index_PC = all_sink_indexes[index]
-                sound_card_order_PC = index
-            elif "hdmi-stereo" in sink:
-                #logger.warning("hdmi-stereo - index HDMI: " + all_sink_indexes[index] + " / order HDMI: " + str(index))
-                sound_card_index_HDMI = all_sink_indexes[index]
-                sound_card_order_HDMI = index
-            elif "bluez_sink" in sink:
-                #logger.warning("bluez_sink - index BLUETOOTH: " + all_sink_indexes[index] + " / order BLUETOOTH: " + str(index))
-                sound_card_index_BLUETOOTH = all_sink_indexes[index]
-                sound_card_order_BLUETOOTH = index
-            else:
-                logger.warning("ERROR: Check get_all_volume_sinks() - Values: \n - sink: " + sink + "\n - order_index: " + str(index) + "\n - sink_index: " + all_sink_indexes[index])
-
-def get_current_volume(sink_order):
-    if(sink_order == 'TBD'):
-        return "N/A"
-    else:
-        volume = subprocess.getoutput("pacmd list-sinks | grep volume:\ front | awk '{i++} i==" + str(sink_order + 1) + "{print $5+0}'")
-        muted  = subprocess.getoutput("pacmd list-sinks | grep muted | awk '{i++} i==" + str(sink_order + 1) + "{print $2}'")
-        if(volume == ""):
-            return "N/A"
-        else:
-            if(muted == "yes"):
-                # return "M"
-                return "M" # nf-mdi-volume_mute
-            else:
-                return volume + "%"
-    
-def get_current_volume_PC():
-    get_all_volume_sinks()
-    return get_current_volume(sound_card_order_PC)
-def get_current_volume_HDMI():
-    get_all_volume_sinks()
-    return get_current_volume(sound_card_order_HDMI)
-def get_current_volume_BLUETOOTH():
-    get_all_volume_sinks()
-    #return get_current_volume(sound_card_order_BLUETOOTH)
-    blutooth_volume = get_current_volume(sound_card_order_BLUETOOTH)
-    if(blutooth_volume == "N/A"):
-        return "ﳌ" # Nerd fonts: nf-mdi-headphones_off
-    else:
-        return "" # Nerd fonts: nf-mdi-headphones
-
-#get_all_volume_sinks()
+        return "󰟎" # Nerd fonts: nf-mdi-headphones
 
 # _______________________________________________________________________________________
 #|                                                                                       |
@@ -367,31 +300,20 @@ keys = [
     Key([mod], "x", lazy.spawn(f"xrandr --output {right_screen} --primary --mode {right_screen_res} --output {left_screen} --mode {left_screen_res} --left-of {right_screen}")),   
 
     # Output volume control PC
-    Key([], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " -5%")),
-    Key([], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_PC + " +5%")),
-    Key([], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_PC + " toggle")),
-    # Output volume control HDMI
-    Key(["control"], 'XF86AudioLowerVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI + " -5%")),
-    Key(["control"], 'XF86AudioRaiseVolume', lazy.spawn("pactl set-sink-volume " + sound_card_index_HDMI+ " +5%")),
-    Key(["control"], 'XF86AudioMute', lazy.spawn("pactl set-sink-mute " + sound_card_index_HDMI + " toggle")), 
-
-    # Brightness and state control right screen
-    Key(["control"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + right_screen + " + 50 ")),
-    Key(["control"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + right_screen + " - 50 ")),
-    # Brightness and state control left screen
-    Key(["shift"], 'XF86MonBrightnessUp', lazy.spawn("brightness " + left_screen + " + 50 ")),
-    Key(["shift"], 'XF86MonBrightnessDown', lazy.spawn("brightness " + left_screen + " - 50 ")),
+    Key([], 'XF86AudioLowerVolume', lazy.spawn(f"pactl set-sink-volume {mobo_sound_sink_name} -5%")),
+    Key([], 'XF86AudioRaiseVolume', lazy.spawn(f"pactl set-sink-volume {mobo_sound_sink_name} +5%")),
+    Key([], 'XF86AudioMute', lazy.spawn(f"pactl set-sink-mute {mobo_sound_sink_name} toggle")),
 
     # Move to previous group
     #Key(["control", alt], "Left", lazy.screen.prev_group()),
     #Key(["control", alt], "Right", lazy.screen.next_group()),
 ]
+#log(f"pactl set-sink-volume {mobo_sound_sink_name} -5%")
 
 # _______________________________________________________________________________________
 #|                                                                                       |
 #|                                       WORKSPACES                                      |
 #|_______________________________________________________________________________________|
-#tags = ["", "", "", "󰈹", "󰇮", "", "", "", ""]
 tags = ["", "", "", "󱔗", "", "󰇮", "󰊖", "󰒍", ""]
 
 group_names = [(tags[0], {'layout': 'monadtall'}),
@@ -404,16 +326,6 @@ group_names = [(tags[0], {'layout': 'monadtall'}),
                (tags[7], {'layout': 'monadtall'}),
                (tags[8], {'layout': 'monadtall'})]
 
-#group_names = [("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'max'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'}),
-#               ("",  {'layout': 'monadtall'})]
-#
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
 for i, (name, kwargs) in enumerate(group_names, 0):
@@ -532,6 +444,7 @@ def init_widgets_list():
 			fontsize=37,
         	#background=bg,
 			background = None,
+   	        #background = colors["black_grey"],
         	borderwidth=1,
 			center_aligned = True,
         	colors=[
@@ -546,8 +459,13 @@ def init_widgets_list():
 				colors["light_magenta"], 
 				colors["magenta"]
         	],
+			this_current_screen_border = colors["purple"],
+            this_screen_border = colors["dark_grey"],
+            other_current_screen_border = colors["black_grey"],
+            other_screen_border = colors["black_grey"],
         	#highlight_color=colors["bg"],
         	highlight_method="line",
+			active=colors["light_white"],
         	inactive=colors["light_white"],
         	invert=True,
         	padding=15,
@@ -626,11 +544,12 @@ def init_widgets_list():
 			colour_no_updates = colors["light_black"],
 			display_format = "{updates} updates  ",
 			distro = "Arch",
-			initial_text = "No update  ",
-			no_update_string = "No update  ",
+			initial_text = "No updates  ",
+			no_update_string = "No updates  ",
 			padding = 0,
-			update_interval = 3600,
+			update_interval = 60,
 		),
+		
 
 		widget.Spacer(),
 
@@ -645,48 +564,112 @@ def init_widgets_list():
 		),
 
 		widget.Spacer(),
-
-		modify(
-			CustomTextBox,
-			background 	= colors["light_green"],
+		
+		widget.GenPollText(
 			foreground = colors["light_black"],
-			decorations = [ 
+			background = colors["light_yellow"],
+			font = FONT,
+			fontsize = 25,
+			decorations = [
 				RectDecoration(
 					filled = True,
 					radius = [10, 0, 0, 10],
 					use_widget_background = True
 				)
 			],
-			font = FONT,
-			fontsize = 16,
-			text = "󰋋",
-			x = 4
-		),
+			padding = 12,
+            func=check_vpn_status,
+            update_interval=0.1,
+        ),
 
-		modify(
-			widget.PulseVolume,
-			background = colors["light_green"],
+		widget.GenPollText(
 			foreground = colors["light_black"],
+			background = colors["light_yellow"],
 			font = FONT,
-			fontsize = 13,
+			fontsize = 25,
 			decorations = [
 				PowerLineDecoration(
 					path = "arrow_right",
 					size = 11
 				)
 			],
-			update_interval = 0.2,
-			#device = SOUND_SINK_NAME,
-			width = CALCULATED,
-			padding = 3,
-			fmt = " {} "
+			padding = 15,
+            func=print_internet_status,
+            update_interval=0.1,
+        ),
+		
+		modify(
+			CustomTextBox,
+			foreground = colors["light_black"],
+			background 	= colors["light_blue"],
+			decorations = [ 
+				PowerLineDecoration(
+					path = "arrow_right",
+					size = 11
+				)
+			],
+			font = FONT,
+			padding = 5,
+			fontsize = 20,
+			text = "",
+			x = 4
 		),
+
+		widget.GenPollText(
+			foreground = colors["light_black"],
+			background = colors["light_blue"],
+			font = FONT,
+			fontsize = 22,
+			decorations = [
+				PowerLineDecoration(
+					path = "arrow_right",
+					size = 11
+				)
+			],
+			padding = 15,
+            func=is_bluetooth_hp_connected,
+            update_interval=0.1,
+        ),
+
+		
+		CustomTextBox(
+			foreground = colors["light_black"],
+			background = colors["light_red"],
+			font = FONT,
+			fontsize = 20,
+			offset = -2,
+			padding = 7,
+			text = "",
+			x = -2
+		),
+
+		modify(
+			widget.PulseVolume,
+			foreground = colors["light_black"],
+			background = colors["light_red"],
+			font = FONT,
+			fontsize = 16,
+			decorations = [
+				PowerLineDecoration(
+					path = "arrow_right",
+					size = 11
+				)
+			],
+			update_interval = 0.01,
+			device = mobo_sound_sink_name,
+			#width = CALCULATED,
+			padding = 0,
+			fmt = " {} "
+			#volume_down_command = f"pactl set-sink-volume {mobo_sound_sink_name} -5%",
+			#volume_up_command = f"pactl set-sink-volume {mobo_sound_sink_name} -5%"
+		),
+
 
 		CustomTextBox(
 			foreground = colors["light_black"],
-			background = colors["light_yellow"],
+			background = colors["light_green"],
 			font = FONT,
-			fontsize = 16,
+			fontsize = 20,
 			offset = -2,
 			padding = 5,
 			text = "󰍛",
@@ -695,16 +678,16 @@ def init_widgets_list():
 
 		widget.Memory(
 			foreground = colors["light_black"],
-			background = colors["light_yellow"],
+			background = colors["light_green"],
 			font = FONT,
-			fontsize = 13,
+			fontsize = 15,
 			decorations = [
 				PowerLineDecoration(
 					path = "arrow_right",
 					size = 11
 				)
 			],
-			format = "{MemUsed: 2.1f}{mm} ",
+			format = "{MemUsed: 2.1f} {mm}b ",
 			padding = -1,
 			measure_mem = "G"
 		),
@@ -713,7 +696,8 @@ def init_widgets_list():
 			foreground = colors["light_black"],
 			background = colors["light_cyan"],
 			font = FONT,
-			fontsize = 13,
+			fontsize = 20,
+			padding = 10,
 			offset = -1,
 			text = "󰋊",
 			x = -5
@@ -723,7 +707,35 @@ def init_widgets_list():
 			foreground = colors["light_black"],
 			background = colors["light_cyan"],
 			font = FONT,
-			fontsize = 13,
+			fontsize = 15,
+			decorations = [
+				PowerLineDecoration(
+					path = "arrow_right",
+					size = 11
+				)
+			],
+			format = "{f: 3.0f} Gb ",
+			padding = 0,
+			partition = "/",
+			visible_on_warn = False,
+			warn_color = colors["light_cyan"]
+		),
+		
+		CustomTextBox(
+			foreground = colors["light_black"],
+			background = colors["light_yellow"],
+			font = FONT,
+			fontsize = 20,
+			offset = -1,
+			text = "",
+			x = -5
+		),
+
+		widget.GenPollText(
+			foreground = colors["light_black"],
+			background = colors["light_yellow"],
+			font = FONT,
+			fontsize = 15,
 			decorations = [
 				RectDecoration(
 					filled = True,
@@ -731,12 +743,10 @@ def init_widgets_list():
 					use_widget_background = True
 				)
 			],
-			format = "{f: 3.0f}GB ",
-			padding = 0,
-			partition = "/",
-			visible_on_warn = False,
-			warn_color = colors["light_cyan"]
-		),
+			padding = 10,
+            func=get_kb_layout,
+            update_interval=0.5,
+        ),
 
 		CustomTextBox(
 			background = None,
@@ -759,7 +769,7 @@ def init_widgets_list():
 				)
 			],
 			font = FONT,
-			fontsize = 16,
+			fontsize = 20,
 			offset = 2,
 			text = "󰥔",
 			x = 4
@@ -777,7 +787,7 @@ def init_widgets_list():
 				)
 			],
 			font = FONT,
-			fontsize = 13,
+			fontsize = 16,
 			format = "%d %b %Y - %H:%M",
 			padding = 6
 		),

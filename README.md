@@ -1,4 +1,4 @@
-# **Qtile AlexJavor configuration**
+# **Qtile Skrivroot configuration**
 ## **Installation**
 
 Official documentation: https://docs.qtile.org/en/latest/manual/install/

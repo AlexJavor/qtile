@@ -1,9 +1,12 @@
-#   ___  _   _ _         ____             __ _                    _    _              _                       
-#  / _ \| |_(_) | ___   / ___|___  _ __  / _(_) __ _             / \  | | _____  __  | | __ ___   _____  _ __ 
-# | | | | __| | |/ _ \ | |   / _ \| '_ \| |_| |/ _` |  _____    / _ \ | |/ _ \ \/ /  | |/ _` \ \ / / _ \| '__|
-# | |_| | |_| | |  __/ | |__| (_) | | | |  _| | (_| | |_____|  / ___ \| |  __/>  < |_| | (_| |\ V / (_) | |   
-#  \__\_\\__|_|_|\___|  \____\___/|_| |_|_| |_|\__, |         /_/   \_\_|\___/_/\_\___/ \__,_| \_/ \___/|_|   
-#                                              |___/                                                          
+#   ___  _   _ _         ____             __ _                 ____  _         _                       _   
+#  / _ \| |_(_) | ___   / ___|___  _ __  / _(_) __ _          / ___|| | ___ __(_)_   ___ __ ___   ___ | |_ 
+# | | | | __| | |/ _ \ | |   / _ \| '_ \| |_| |/ _` |  _____  \___ \| |/ / '__| \ \ / / '__/ _ \ / _ \| __|
+# | |_| | |_| | |  __/ | |__| (_) | | | |  _| | (_| | |_____|  ___) |   <| |  | |\ V /| | | (_) | (_) | |_ 
+#  \__\_\\__|_|_|\___|  \____\___/|_| |_|_| |_|\__, |         |____/|_|\_\_|  |_| \_/ |_|  \___/ \___/ \__|
+#                                              |___/
+# ASCII Generator 
+# URL: https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Big&text=Your%20text%20here%20
+# Type: Standard
 
 # IMPORTANT: Create simbolic links for the "set_brightness_config" and "set_volume_config":
 # ln -s ~/.config/qtile/set_volume_config /usr/bin/volume
@@ -282,12 +285,16 @@ keys = [
     Key([mod, "control"], "m", lazy.spawn(my_mailclient)),
     # Open VirtualBox 
     #Key([mod], "v", lazy.spawn("virtualbox")),
+	# Open NeoVim
+	Key([mod], "v", lazy.spawn("terminator -e nvim")),
     # Open Pavucontrol
     Key([mod], "p", lazy.spawn("pavucontrol")),
     # Open Session
     Key([mod], "s", lazy.spawn("./SourceCode/Session/session-desktop-linux-x86_64-1.4.4.AppImage")),
-    # Open config
-    Key([mod], "c", lazy.spawn("codium .config/qtile/config.py")),
+    # Open codium
+    Key([mod], "c", lazy.spawn("codium")),
+    # Open config in codium
+    Key([mod, "control"], "c", lazy.spawn("codium .config/qtile/config.py")),
     # Open Bitwarden
     Key([mod], "b", lazy.spawn("./SourceCode/Bitwarden.AppImage")),
 
@@ -384,6 +391,9 @@ extension_defaults = widget_defaults.copy()
 
 def init_widgets_list():
     widgets_list = [
+        # -----------------------------------------------------------
+        # -- LOGO IMAGE (TROPTIMUM) 
+        # -----------------------------------------------------------
 		widget.Spacer(
 			length = 2
 		),
@@ -405,7 +415,7 @@ def init_widgets_list():
 			# 	"Button1": lazy.restart()
 			# },
 			padding = 20,
-			filename = "~/.config/qtile/icons/trioptimum-logo.png",
+			filename = "~/.config/qtile/icons/skrivroot-logo.png",
 		),
 
 		CustomTextBox(
@@ -417,26 +427,10 @@ def init_widgets_list():
 			padding = 8,
 			text = "󰇙"
 		),
-        #widget.GroupBox(
-        #    fontsize = 30,
-        #    font="FontAwesome",
-        #    margin_x = 0,
-        #    margin_y = 0,
-        #    center_aligned = True,
-        #    padding_x = 25,
-        #    padding_y = 8,
-        #    borderwidth = 3,
-        #    inactive = colors["white"],
-        #    highlight_method = "block",
-        #    rounded = False,
-        #    active = colors["white"],
-        #    this_current_screen_border = colors["purple"],
-        #    this_screen_border = colors["dark_grey"],
-        #    other_current_screen_border = colors["black_grey"],
-        #    other_screen_border = colors["black_grey"],
-        #    foreground = colors["white"],
-        #    background = colors["black_grey"]
-        #),
+
+		# -----------------------------------------------------------
+        # -- WORKSPACES 
+        # -----------------------------------------------------------
 
 		CustomGroupBox(
 			#font=FONT,
@@ -481,6 +475,10 @@ def init_widgets_list():
 			padding = 4,
 			text = "󰇙"
 		),
+		
+		# -----------------------------------------------------------
+        # -- LAYOUT & PACMAN UPDATES 
+        # -----------------------------------------------------------
 
 		modify(
 			widget.CurrentLayoutIcon,
@@ -549,9 +547,20 @@ def init_widgets_list():
 			padding = 0,
 			update_interval = 60,
 		),
-		
+		        
+		# -----------------------------------------------------------
+        # -- PROMPT AND CURRENT WINDOW NAME 
+        # -----------------------------------------------------------
 
 		widget.Spacer(),
+        
+		widget.Prompt(
+            prompt = "{0}@{1}: ".format(os.environ["USER"], socket.gethostname()),
+            padding = 10,
+            foreground = colors["light_red"],
+			fontsize = 16 
+            #background = colors["dark_grey"]
+        ),
 
 		widget.WindowName(
 			foreground = colors["light_white"],
@@ -564,6 +573,10 @@ def init_widgets_list():
 		),
 
 		widget.Spacer(),
+	    
+		# --------------------------------------------------------------------
+        # -- SYSTEM MONITORING (VPN & NETWORK, VOLUME, HARD DRIVE, CPU & RAM) 
+        # --------------------------------------------------------------------
 		
 		widget.GenPollText(
 			foreground = colors["light_black"],
@@ -756,6 +769,10 @@ def init_widgets_list():
 			padding = 8,
 			text = "󰇙"
 		),
+
+        # -----------------------------------------------------------
+        # -- DATE AND TIME  
+        # -----------------------------------------------------------
 
 		modify(
 			CustomTextBox,
